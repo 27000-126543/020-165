@@ -5,7 +5,7 @@ import styles from './index.module.scss';
 import { getPackageById } from '@/data/packages';
 import { DentalPackage, ReservationRecord } from '@/types';
 import { useAppContext } from '@/store/app-context';
-import { formatDate, addDays, formatPrice } from '@/utils';
+import { formatDate, addDays, formatPrice, formatDateTime, generateId } from '@/utils';
 import classnames from 'classnames';
 
 const ReservationPage: React.FC = () => {
@@ -39,8 +39,10 @@ const ReservationPage: React.FC = () => {
   const handleSubmit = () => {
     if (!canSubmit || !pkg) return;
 
+    const now = new Date();
+    const createTime = formatDateTime(now);
     const newReservation: ReservationRecord = {
-      id: `res-${Date.now()}`,
+      id: generateId(),
       packageId: pkg.id,
       packageName: pkg.name,
       clinicName: pkg.clinicName,
@@ -48,7 +50,15 @@ const ReservationPage: React.FC = () => {
       lockDate,
       expireDate,
       status: 'locked',
-      createTime: `${lockDate} ${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`
+      createTime,
+      communications: [
+        {
+          id: generateId(),
+          time: createTime,
+          type: 'patient',
+          content: `已成功锁定套餐价格，有效期至${expireDate}`
+        }
+      ]
     };
 
     addReservation(newReservation);

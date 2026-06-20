@@ -162,13 +162,20 @@
   margin-bottom: $spacing-xs;
 }
 
-.reservationPriceRow {
+.reservationFooter {
   display: flex;
   align-items: center;
+  gap: $spacing-sm;
 }
 
 .reservationPrice {
   font-size: $font-size-md;
   color: $color-price;
   font-weight: $font-weight-semibold;
+}
+
+.reservationArrow {
+  margin-left: auto;
+  font-size: $font-size-sm;
+  color: $color-primary;
 }

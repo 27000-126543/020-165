@@ -1,0 +1,417 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  padding-bottom: 180rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: 40rpx $page-padding 64rpx;
+  color: $color-text-white;
+}
+
+.packageName {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-sm;
+}
+
+.clinicName {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+  margin-bottom: $spacing-md;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.statusTag {
+  padding: 6rpx 16rpx;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: $radius-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.priceRow {
+  margin-top: $spacing-md;
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-xs;
+}
+
+.priceSymbol {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+}
+
+.price {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+}
+
+.priceLabel {
+  font-size: $font-size-sm;
+  opacity: 0.8;
+}
+
+.content {
+  padding: 0 $page-padding;
+  margin-top: -32rpx;
+}
+
+.section {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.sectionIcon {
+  font-size: 32rpx;
+}
+
+.infoRow {
+  display: flex;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.infoLabel {
+  width: 180rpx;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+}
+
+.inapplicableBanner {
+  background: linear-gradient(135deg, $color-warning-bg 0%, $color-error-bg 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+.bannerTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-error;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.bannerIcon {
+  font-size: 36rpx;
+}
+
+.bannerContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.bannerReason {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-error;
+}
+
+.commList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.commItem {
+  display: flex;
+  gap: $spacing-sm;
+
+  &.doctor {
+    flex-direction: row;
+  }
+
+  &.patient {
+    flex-direction: row-reverse;
+  }
+}
+
+.commAvatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  flex-shrink: 0;
+
+  .doctor & {
+    background-color: $color-primary-bg;
+  }
+
+  .patient & {
+    background-color: $color-success-bg;
+  }
+}
+
+.commContent {
+  max-width: 70%;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  position: relative;
+
+  .doctor & {
+    background-color: $color-bg-section;
+    border-top-left-radius: 0;
+  }
+
+  .patient & {
+    background-color: $color-primary-bg;
+    border-top-right-radius: 0;
+  }
+}
+
+.commText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+}
+
+.commTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.commType {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  margin-bottom: 4rpx;
+
+  .doctor & {
+    color: $color-primary;
+  }
+
+  .patient & {
+    color: $color-success;
+  }
+}
+
+.inputSection {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.inputTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.inputBox {
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  min-height: 160rpx;
+  margin-bottom: $spacing-md;
+}
+
+.textarea {
+  width: 100%;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+}
+
+.inputTip {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
+.primaryBtn {
+  width: 100%;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+
+  &.disabled {
+    background: $color-text-disabled;
+  }
+}
+
+.primaryBtnText {
+  font-size: $font-size-md;
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+}
+
+.actionRow {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.secondaryBtn {
+  flex: 1;
+  height: $button-height-lg;
+  background-color: $color-bg-section;
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.secondaryBtnText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.warningBtn {
+  flex: 1;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-warning 0%, #FF9A2E 100%);
+  border-radius: $radius-button;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+}
+
+.warningBtnText {
+  font-size: $font-size-md;
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+}
+
+.emptyComm {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.emptyCommText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $page-padding;
+}
+
+.modalCard {
+  width: 100%;
+  background-color: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+}
+
+.modalTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-md;
+}
+
+.modalDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  margin-bottom: $spacing-lg;
+  line-height: $line-height-normal;
+}
+
+.modalInput {
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  min-height: 200rpx;
+  margin-bottom: $spacing-md;
+}
+
+.modalTextarea {
+  width: 100%;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+}
+
+.modalBtnRow {
+  display: flex;
+  gap: $spacing-md;
+}

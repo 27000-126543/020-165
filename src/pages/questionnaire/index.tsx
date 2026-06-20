@@ -10,10 +10,10 @@ import {
   painLevelOptions,
   budgetOptions
 } from '@/data/questionnaire';
-import { getPackagesByCategory, getPackagesByBudget } from '@/data/packages';
+import { getRecommendedPackages } from '@/data/packages';
 import StepIndicator from '@/components/StepIndicator';
 import PackageCard from '@/components/PackageCard';
-import { DentalPackage } from '@/types';
+import { DentalPackage, RecommendResult } from '@/types';
 import classnames from 'classnames';
 
 const steps = ['选择诉求', '年龄段', '拍片情况', '疼痛程度', '预算范围'];
@@ -39,20 +39,14 @@ const QuestionnairePage: React.FC = () => {
     }
   }, [currentStep, questionnaireData]);
 
-  const recommendedPackages = useMemo<DentalPackage[]>(() => {
-    if (currentStep < 5) return [];
-
-    let result: DentalPackage[] = [];
-
-    if (questionnaireData.demand) {
-      result = getPackagesByCategory(questionnaireData.demand);
+  const recommendResult = useMemo<RecommendResult>(() => {
+    if (currentStep < 5) {
+      return {
+        packages: [],
+        budgetMatch: 'none'
+      };
     }
-
-    if (questionnaireData.budget && result.length === 0) {
-      result = getPackagesByBudget(questionnaireData.budget);
-    }
-
-    return result.slice(0, 3);
+    return getRecommendedPackages(questionnaireData.demand, questionnaireData.budget);
   }, [currentStep, questionnaireData]);
 
   const handleNext = () => {
@@ -219,24 +213,65 @@ const QuestionnairePage: React.FC = () => {
 
           <View className={styles.content}>
             <View className={styles.resultCard}>
-              <Text className={styles.resultIcon}>🎉</Text>
-              <Text className={styles.resultTitle}>已为您找到合适方案</Text>
-              <Text className={styles.resultDesc}>
-                根据您的需求，我们为您推荐以下套餐
+              <Text className={styles.resultIcon}>
+                {recommendResult.budgetMatch === 'perfect' ? '🎉' : recommendResult.budgetMatch === 'partial' ? '💡' : '😅'}
               </Text>
+              <Text className={styles.resultTitle}>
+                {recommendResult.budgetMatch === 'perfect'
+                  ? '已为您找到合适方案'
+                  : recommendResult.budgetMatch === 'partial'
+                  ? '预算略有差异，为您推荐相近选项'
+                  : '暂无完全匹配的套餐'}
+              </Text>
+              <Text className={styles.resultDesc}>
+                {recommendResult.budgetMatch === 'perfect'
+                  ? '根据您的需求，我们为您推荐以下套餐'
+                  : recommendResult.budgetMatch === 'partial'
+                  ? '以下套餐价格接近您的预算，供您参考'
+                  : '您可以参考以下建议，或查看全部套餐'}
+              </Text>
+
+              {recommendResult.budgetTip && (
+                <View className={styles.budgetWarning}>
+                  <Text className={styles.budgetWarningText}>
+                    ⚠️ {recommendResult.budgetTip}
+                  </Text>
+                </View>
+              )}
+
+              {recommendResult.alternativeTip && (
+                <View className={styles.alternativeTip}>
+                  <Text className={styles.alternativeTipText}>
+                    💡 {recommendResult.alternativeTip}
+                  </Text>
+                </View>
+              )}
+
               <View className={styles.resultTip}>
                 <Text className={styles.resultTipText}>
-                  💡 温馨提示：套餐仅供参考，具体治疗方案请以医生面诊为准
+                  � 温馨提示：套餐仅供参考，具体治疗方案请以医生面诊为准
                 </Text>
               </View>
             </View>
 
-            <View className={styles.packageSection}>
-              <Text className={styles.sectionTitle}>推荐套餐</Text>
-              {recommendedPackages.map(pkg => (
-                <PackageCard key={pkg.id} pkg={pkg} />
-              ))}
-            </View>
+            {recommendResult.packages.length > 0 ? (
+              <View className={styles.packageSection}>
+                <Text className={styles.sectionTitle}>
+                  {recommendResult.budgetMatch === 'none' ? '您可能感兴趣' : '推荐套餐'}
+                </Text>
+                {recommendResult.packages.map(pkg => (
+                  <PackageCard key={pkg.id} pkg={pkg} />
+                ))}
+              </View>
+            ) : (
+              <View className={styles.emptyState}>
+                <Text className={styles.emptyIcon}>🦷</Text>
+                <Text className={styles.emptyText}>暂无完全匹配的套餐</Text>
+                <Text className={styles.emptyDesc}>
+                  建议您到店先做口腔检查，让医生根据具体情况给出方案
+                </Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 

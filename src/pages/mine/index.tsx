@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
 import { getStatusText, getStatusColor, formatPrice } from '@/utils';
+import Tag from '@/components/Tag';
 
 const MinePage: React.FC = () => {
   const { reservations } = useAppContext();
@@ -68,7 +69,15 @@ const MinePage: React.FC = () => {
           <View className={styles.sectionTitle}>最近预约</View>
           <View className={styles.reservationList}>
             {activeReservations.map(r => (
-              <View key={r.id} className={styles.reservationItem}>
+              <View
+                key={r.id}
+                className={styles.reservationItem}
+                onClick={() =>
+                  Taro.navigateTo({
+                    url: `/pages/reservation-detail/index?id=${r.id}`
+                  })
+                }
+              >
                 <View className={styles.reservationHeader}>
                   <Text className={styles.reservationName}>{r.packageName}</Text>
                   <Text
@@ -79,8 +88,12 @@ const MinePage: React.FC = () => {
                   </Text>
                 </View>
                 <Text className={styles.reservationInfo}>{r.clinicName}</Text>
-                <View className={styles.reservationPriceRow}>
+                <View className={styles.reservationFooter}>
                   <Text className={styles.reservationPrice}>¥{formatPrice(r.price)}</Text>
+                  {r.status === 'inapplicable' && (
+                    <Tag text="待确认" type="warning" size="sm" />
+                  )}
+                  <Text className={styles.reservationArrow}>查看详情 ›</Text>
                 </View>
               </View>
             ))}

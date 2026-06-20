@@ -1,4 +1,5 @@
-import { DentalPackage, DemandType } from '@/types';
+import { DentalPackage, DemandType, RecommendResult, BudgetRange } from '@/types';
+import { getBudgetMax, getBudgetMin } from '@/utils';
 
 export const packagesData: DentalPackage[] = [
   {
@@ -281,4 +282,87 @@ export const getPackagesByBudget = (budget: string): DentalPackage[] => {
     default:
       return packagesData;
   }
+};
+
+export const getRecommendedPackages = (demand: DemandType | null, budget: BudgetRange | null): RecommendResult => {
+  if (!demand) {
+    return {
+      packages: [],
+      budgetMatch: 'none',
+      alternativeTip: '请先选择您的诉求，我们为您精准推荐'
+    };
+  }
+
+  const demandPackages = getPackagesByCategory(demand);
+  const budgetMax = budget ? getBudgetMax(budget) : 999999;
+  const budgetMin = budget ? getBudgetMin(budget) : 0;
+
+  const perfectMatch = demandPackages.filter(
+    pkg => pkg.price >= budgetMin && pkg.price <= budgetMax
+  );
+
+  if (perfectMatch.length > 0) {
+    return {
+      packages: perfectMatch.slice(0, 3),
+      budgetMatch: 'perfect'
+    };
+  }
+
+  const closeMatch = demandPackages.filter(
+    pkg => pkg.price <= budgetMax * 1.5
+  ).sort((a, b) => a.price - b.price).slice(0, 3);
+
+  if (closeMatch.length > 0) {
+    const lowestPrice = Math.min(...demandPackages.map(p => p.price));
+    let budgetTip = '';
+    let alternativeTip = '';
+
+    if (demand === 'implant') {
+      budgetTip = `您选择的缺牙修复类项目价格相对较高，最低约 ¥${lowestPrice} 起。`;
+      alternativeTip = '建议您可以先到诊所做口腔检查，了解具体治疗方案后再决定。也可以考虑活动义齿等更经济的修复方式，可咨询医生了解详情。';
+    } else if (demand === 'whiten') {
+      budgetTip = `美白类项目最低约 ¥${lowestPrice} 起，略高于您的预算。`;
+      alternativeTip = '您也可以先做洁牙套餐，去除表面色素沉着，日常注意少喝深色饮品，也能在一定程度上改善牙齿色泽。';
+    } else if (demand === 'fill') {
+      budgetTip = `补牙价格根据蛀牙程度不同有所差异，最低约 ¥${lowestPrice} 起。`;
+      alternativeTip = '建议尽早治疗，越早治疗费用越低。可以到店先拍片检查，了解具体情况后确认最终费用。';
+    } else {
+      budgetTip = `部分套餐价格略高于您的预算，已为您推荐价格最接近的选项。`;
+      alternativeTip = '您也可以调整预算范围，或先到店咨询了解详情后再做决定。';
+    }
+
+    return {
+      packages: closeMatch,
+      budgetMatch: 'partial',
+      budgetTip,
+      alternativeTip
+    };
+  }
+
+  const demandLabel = {
+    clean: '牙齿清洁',
+    fill: '蛀牙修补',
+    whiten: '牙齿变白',
+    implant: '缺牙修复'
+  }[demand];
+
+  let budgetTip = `当前${demandLabel}类项目价格均高于您的预算范围。`;
+  let alternativeTip = '';
+
+  if (demand === 'implant') {
+    alternativeTip = '缺牙修复可以考虑活动义齿、固定桥等更经济的方案。建议先到诊所拍片检查，让医生根据您的口腔条件给出具体建议和费用预估。';
+  } else if (demand === 'whiten') {
+    alternativeTip = '建议先做基础洁牙，去除牙结石和表面色素。日常注意口腔卫生，使用美白牙膏，也能改善牙齿外观。';
+  } else {
+    alternativeTip = '建议先到店做基础检查，让医生评估具体情况后，再选择最适合您的方案。';
+  }
+
+  const otherPackages = getPackagesByBudget(budget || 'low').slice(0, 2);
+
+  return {
+    packages: otherPackages.length > 0 ? otherPackages : [],
+    budgetMatch: 'none',
+    budgetTip,
+    alternativeTip
+  };
 };

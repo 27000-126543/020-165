@@ -61,6 +61,17 @@ export interface DentalPackage {
   description: string;
 }
 
+// 预约记录状态
+export type ReservationStatus = 'locked' | 'confirmed' | 'completed' | 'cancelled' | 'inapplicable' | 'reconfirmed';
+
+// 沟通记录项
+export interface CommunicationItem {
+  id: string;
+  time: string;
+  type: 'doctor' | 'patient';
+  content: string;
+}
+
 // 预约记录
 export interface ReservationRecord {
   id: string;
@@ -70,9 +81,18 @@ export interface ReservationRecord {
   price: number;
   lockDate: string;
   expireDate: string;
-  status: 'locked' | 'confirmed' | 'completed' | 'cancelled';
+  status: ReservationStatus;
   createTime: string;
-  communicationLog?: string;
+  inapplicableReason?: string;
+  communications: CommunicationItem[];
+}
+
+// 推荐匹配结果
+export interface RecommendResult {
+  packages: DentalPackage[];
+  budgetMatch: 'perfect' | 'partial' | 'none';
+  budgetTip?: string;
+  alternativeTip?: string;
 }
 
 // 诊所信息
