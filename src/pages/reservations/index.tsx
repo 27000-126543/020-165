@@ -8,24 +8,31 @@ import Tag from '@/components/Tag';
 import { ReservationStatus } from '@/types';
 import classnames from 'classnames';
 
-const filterOptions: { value: 'all' | ReservationStatus; label: string; type: 'default' | 'primary' | 'warning' | 'success' | 'error' }[] = [
+const filterOptions: { value: 'all' | ReservationStatus | 'expired'; label: string; type: 'default' | 'primary' | 'warning' | 'success' | 'error' }[] = [
   { value: 'all', label: '全部', type: 'default' },
   { value: 'locked', label: '已锁价', type: 'primary' },
   { value: 'inapplicable', label: '不适用待确认', type: 'warning' },
   { value: 'reconfirmed', label: '已重新确认', type: 'success' },
   { value: 'confirmed', label: '已确认', type: 'default' },
-  { value: 'completed', label: '已完成', type: 'success' }
+  { value: 'completed', label: '已完成', type: 'success' },
+  { value: 'expired', label: '已过期', type: 'error' }
 ];
 
 const ReservationsPage: React.FC = () => {
   const { reservations } = useAppContext();
-  const [activeFilter, setActiveFilter] = useState<'all' | ReservationStatus>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | ReservationStatus | 'expired'>('all');
 
   const filteredReservations = useMemo(() => {
     const sorted = [...reservations].sort(
       (a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
     );
     if (activeFilter === 'all') return sorted;
+    if (activeFilter === 'locked') {
+      return sorted.filter(r => r.status === 'locked' && !isExpired(r.expireDate));
+    }
+    if (activeFilter === 'expired') {
+      return sorted.filter(r => (r.status === 'locked' || r.status === 'confirmed') && isExpired(r.expireDate));
+    }
     return sorted.filter(r => r.status === activeFilter);
   }, [reservations, activeFilter]);
 
@@ -134,6 +141,11 @@ const ReservationsPage: React.FC = () => {
                     <Text className={styles.intentionText}>
                       处理意向：{getIntentionText(r.lastIntention)}
                     </Text>
+                    {r.lastIntention === 'accept_advice' && r.confirmedAt && (
+                      <View className={styles.processedBadge}>
+                        <Text className={styles.processedBadgeText}>✓ 已按建议处理</Text>
+                      </View>
+                    )}
                   </View>
                 )}
 

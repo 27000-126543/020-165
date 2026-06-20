@@ -266,3 +266,33 @@
   color: $color-text-tertiary;
   margin-bottom: $spacing-xs;
 }
+
+.reservationIntention {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-xs;
+
+  .intentionIcon {
+    font-size: 22rpx;
+  }
+
+  .intentionText {
+    font-size: $font-size-xs;
+    color: $color-primary-dark;
+  }
+}
+
+.processedBadge {
+  margin-left: auto;
+  padding: 2rpx 10rpx;
+  background-color: $color-success;
+  border-radius: $radius-xs;
+  flex-shrink: 0;
+}
+
+.processedBadgeText {
+  font-size: 20rpx;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}

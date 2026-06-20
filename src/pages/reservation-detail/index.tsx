@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Textarea } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
 import { getPackageById, getPackagesByCategory } from '@/data/packages';
-import { getStatusText, getStatusColor, formatPrice, formatDateTime, getIntentionText, getIntentionIcon, getRemainingDays, isExpiringSoon, isExpired, getDemandLabel } from '@/utils';
+import { getStatusText, getStatusColor, formatPrice, formatDateTime, getIntentionText, getIntentionIcon, getRemainingDays, isExpiringSoon, isExpired, getDemandLabel, getBudgetLabel } from '@/utils';
 import { ReservationRecord, DentalPackage, HandleIntention, DemandType } from '@/types';
 import classnames from 'classnames';
 
@@ -51,6 +51,44 @@ const ReservationDetailPage: React.FC = () => {
     }
   }, [router.params.id, getReservationById]);
 
+  const effectiveStatus = useMemo(() => {
+    if (!reservation) return reservation;
+    const isOverdue = isExpired(reservation.expireDate);
+    if (isOverdue && (reservation.status === 'locked' || reservation.status === 'confirmed')) {
+      return 'expired';
+    }
+    return reservation.status;
+  }, [reservation]);
+
+  const alternativePackages = useMemo(() => {
+    if (!reservation) return [];
+    if (!reservation.lastIntention || reservation.lastIntention !== 'see_alternative') return [];
+    const currentPkg = getPackageById(reservation.packageId);
+    if (!currentPkg) return [];
+    return getPackagesByCategory(currentPkg.category as DemandType)
+      .filter(p => p.id !== reservation.packageId)
+      .slice(0, 2);
+  }, [reservation]);
+
+  const acceptAdviceInfo = useMemo(() => {
+    if (!reservation) return null;
+    if (reservation.lastIntention !== 'accept_advice') return null;
+    const confirmedAt = reservation.confirmedAt ||
+      reservation.communications.find(c => c.type === 'patient' && c.intention === 'accept_advice')?.confirmedAt;
+    const patientComm = reservation.communications.find(
+      c => c.type === 'patient' && c.intention === 'accept_advice'
+    );
+    const patientNote = patientComm && patientComm.content !== '接受医生建议'
+      ? patientComm.content
+      : undefined;
+    if (!confirmedAt) return null;
+    return {
+      confirmedAt,
+      doctorAdvice: reservation.inapplicableReason,
+      patientNote
+    };
+  }, [reservation]);
+
   const handleMarkInapplicable = () => {
     if (!inapplicableReason.trim()) {
       Taro.showToast({ title: '请填写不适用原因', icon: 'none' });
@@ -87,9 +125,11 @@ const ReservationDetailPage: React.FC = () => {
     );
   }
 
-  const canMarkInapplicable = reservation.status === 'locked' || reservation.status === 'confirmed';
+  const canMarkInapplicable = (reservation.status === 'locked' || reservation.status === 'confirmed') && effectiveStatus !== 'expired';
   const needReconfirm = reservation.status === 'inapplicable';
-  const statusColor = getStatusColor(reservation.status);
+  const isOverdue = effectiveStatus === 'expired';
+  const statusText = isOverdue ? '已过期' : getStatusText(reservation.status);
+  const statusColor = isOverdue ? '#F5222D' : getStatusColor(reservation.status);
 
   return (
     <View className={styles.page}>
@@ -98,12 +138,17 @@ const ReservationDetailPage: React.FC = () => {
         <Text className={styles.clinicName}>{reservation.clinicName}</Text>
         <View className={styles.statusRow}>
           <View className={styles.statusTag} style={{ backgroundColor: `${statusColor}40` }}>
-            <Text style={{ color: statusColor }}>{getStatusText(reservation.status)}</Text>
+            <Text style={{ color: statusColor }}>{statusText}</Text>
           </View>
           {reservation.lastIntention && (
             <View className={styles.intentionTag}>
               <Text className={styles.intentionTagIcon}>{getIntentionIcon(reservation.lastIntention)}</Text>
               <Text className={styles.intentionTagText}>{getIntentionText(reservation.lastIntention)}</Text>
+            </View>
+          )}
+          {acceptAdviceInfo && (
+            <View className={styles.processedTag}>
+              <Text className={styles.processedTagText}>✓ 已按建议处理</Text>
             </View>
           )}
         </View>
@@ -117,26 +162,38 @@ const ReservationDetailPage: React.FC = () => {
           if (days < 0) {
             return (
               <View className={styles.expireWarningRow}>
-                <Text className={styles.expireTagExpired}>🔴 已过期</Text>
+                <Text className={styles.expireTagExpired}>🔴 已过期 {-days} 天，锁价失效</Text>
               </View>
             );
           }
           if (days <= 3) {
             return (
               <View className={styles.expireWarningRow}>
-                <Text className={styles.expireTagWarning}>⚠️ 即将过期，仅剩{days}天</Text>
+                <Text className={styles.expireTagWarning}>⚠️ 即将过期，仅剩 {days} 天，请尽快到店</Text>
               </View>
             );
           }
           return (
             <View className={styles.expireWarningRow}>
-              <Text className={styles.expireTagNormal}>有效期还剩{days}天</Text>
+              <Text className={styles.expireTagNormal}>有效期还剩 {days} 天</Text>
             </View>
           );
         })()}
       </View>
 
       <View className={styles.content}>
+        {isOverdue && (
+          <View className={styles.expiredBanner}>
+            <Text className={styles.bannerTitle}>
+              <Text className={styles.bannerIcon}>🔴</Text>
+              锁价已过期
+            </Text>
+            <Text className={styles.bannerContent}>
+              该套餐的锁定价格已过有效期，如需就诊请重新预约，价格以最新为准。
+            </Text>
+          </View>
+        )}
+
         {needReconfirm && reservation.inapplicableReason && (
           <View className={styles.inapplicableBanner}>
             <Text className={styles.bannerTitle}>
@@ -152,40 +209,68 @@ const ReservationDetailPage: React.FC = () => {
           </View>
         )}
 
-        {needReconfirm && reservation.lastIntention === 'see_alternative' && (() => {
-          const currentPkg = getPackageById(reservation.packageId);
-          if (!currentPkg) return null;
-          const alternatives = getPackagesByCategory(currentPkg.category as DemandType)
-            .filter(p => p.id !== reservation.packageId)
-            .slice(0, 2);
-          if (alternatives.length === 0) return null;
-          return (
-            <View className={styles.section}>
-              <Text className={styles.sectionTitle}>
-                <Text className={styles.sectionIcon}>🔍</Text>
-                替代套餐推荐
+        {acceptAdviceInfo && (
+          <View className={styles.section}>
+            <Text className={styles.sectionTitle}>
+              <Text className={styles.sectionIcon}>✅</Text>
+              处理结果
+            </Text>
+            <View className={styles.acceptAdviceCard}>
+              <View className={styles.acceptAdviceRow}>
+                <Text className={styles.acceptAdviceLabel}>确认时间</Text>
+                <Text className={styles.acceptAdviceValue}>{acceptAdviceInfo.confirmedAt}</Text>
+              </View>
+              {acceptAdviceInfo.doctorAdvice && (
+                <View className={styles.acceptAdviceRow}>
+                  <Text className={styles.acceptAdviceLabel}>医生建议</Text>
+                  <Text className={styles.acceptAdviceValue}>{acceptAdviceInfo.doctorAdvice}</Text>
+                </View>
+              )}
+              {acceptAdviceInfo.patientNote && (
+                <View className={styles.acceptAdviceRow}>
+                  <Text className={styles.acceptAdviceLabel}>我的补充</Text>
+                  <Text className={styles.acceptAdviceValue}>{acceptAdviceInfo.patientNote}</Text>
+                </View>
+              )}
+              <View className={styles.acceptAdviceFooter}>
+                <Text className={styles.acceptAdviceFooterText}>✓ 已确认并按医生建议处理</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {alternativePackages.length > 0 && (
+          <View className={styles.section}>
+            <Text className={styles.sectionTitle}>
+              <Text className={styles.sectionIcon}>🔍</Text>
+              替代套餐推荐
+            </Text>
+            <View className={styles.alternativeHint}>
+              <Text className={styles.alternativeHintText}>
+                根据您当初选择的诉求，推荐同类型其他套餐
               </Text>
-              {alternatives.map(alt => (
-                <View
-                  key={alt.id}
-                  className={styles.alternativeCard}
-                  onClick={() => Taro.navigateTo({ url: `/pages/package-detail/index?id=${alt.id}` })}
-                >
-                  <View className={styles.alternativeInfo}>
-                    <Text className={styles.alternativeName}>{alt.name}</Text>
-                    <View className={styles.alternativeMeta}>
-                      <Text className={styles.alternativePrice}>¥{formatPrice(alt.price)}</Text>
-                      <Text className={styles.alternativeRating}>⭐ {alt.rating}</Text>
-                    </View>
-                  </View>
-                  <View className={styles.alternativeBtn}>
-                    <Text className={styles.alternativeBtnText}>查看详情</Text>
+            </View>
+            {alternativePackages.map(alt => (
+              <View
+                key={alt.id}
+                className={styles.alternativeCard}
+                onClick={() => Taro.navigateTo({ url: `/pages/package-detail/index?id=${alt.id}` })}
+              >
+                <View className={styles.alternativeInfo}>
+                  <Text className={styles.alternativeName}>{alt.name}</Text>
+                  <View className={styles.alternativeMeta}>
+                    <Text className={styles.alternativePrice}>¥{formatPrice(alt.price)}</Text>
+                    <Text className={styles.alternativeRating}>⭐ {alt.rating}</Text>
+                    <Text className={styles.alternativeFollow}>复诊 {alt.followUpCount} 次</Text>
                   </View>
                 </View>
-              ))}
-            </View>
-          );
-        })()}
+                <View className={styles.alternativeBtn}>
+                  <Text className={styles.alternativeBtnText}>查看详情 ›</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         <View className={styles.section}>
           <Text className={styles.sectionTitle}>
@@ -217,12 +302,12 @@ const ReservationDetailPage: React.FC = () => {
             {(() => {
               const days = getRemainingDays(reservation.expireDate);
               if (days < 0) {
-                return <Text className={classnames(styles.infoValue, styles.textExpired)}>已过期{-days}天</Text>;
+                return <Text className={classnames(styles.infoValue, styles.textExpired)}>已过期 {-days} 天（锁价失效）</Text>;
               }
               if (days <= 3) {
-                return <Text className={classnames(styles.infoValue, styles.textWarning)}>仅剩{days}天</Text>;
+                return <Text className={classnames(styles.infoValue, styles.textWarning)}>仅剩 {days} 天</Text>;
               }
-              return <Text className={styles.infoValue}>{days}天</Text>;
+              return <Text className={styles.infoValue}>{days} 天</Text>;
             })()}
           </View>
           <View className={styles.infoRow}>
@@ -230,6 +315,33 @@ const ReservationDetailPage: React.FC = () => {
             <Text className={styles.infoValue}>{reservation.createTime}</Text>
           </View>
         </View>
+
+        {(reservation.demandType || reservation.budgetRange || reservation.recommendSummary) && (
+          <View className={styles.section}>
+            <Text className={styles.sectionTitle}>
+              <Text className={styles.sectionIcon}>💡</Text>
+              当时的选择背景
+            </Text>
+            {reservation.demandType && (
+              <View className={styles.infoRow}>
+                <Text className={styles.infoLabel}>诉求类型</Text>
+                <Text className={styles.infoValue}>{getDemandLabel(reservation.demandType)}</Text>
+              </View>
+            )}
+            {reservation.budgetRange && (
+              <View className={styles.infoRow}>
+                <Text className={styles.infoLabel}>预算范围</Text>
+                <Text className={styles.infoValue}>{getBudgetLabel(reservation.budgetRange)}</Text>
+              </View>
+            )}
+            {reservation.recommendSummary && (
+              <View className={styles.recommendSummary}>
+                <Text className={styles.recommendSummaryLabel}>推荐说明</Text>
+                <Text className={styles.recommendSummaryText}>{reservation.recommendSummary}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {pkg && (
           <View className={styles.section}>
@@ -283,7 +395,7 @@ const ReservationDetailPage: React.FC = () => {
                     <View className={styles.commTimeRow}>
                       <Text className={styles.commTime}>{comm.time}</Text>
                       {comm.confirmedAt && (
-                        <Text className={styles.commConfirmedAt}>确认时间: {comm.confirmedAt}</Text>
+                        <Text className={styles.commConfirmedAt}>· 确认时间 {comm.confirmedAt}</Text>
                       )}
                     </View>
                   </View>

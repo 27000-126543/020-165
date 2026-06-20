@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
-import { getStatusText, getStatusColor, formatPrice, getRemainingDays, isExpiringSoon, isExpired } from '@/utils';
+import { getStatusText, getStatusColor, formatPrice, getRemainingDays, isExpiringSoon, isExpired, getIntentionText, getIntentionIcon } from '@/utils';
 import Tag from '@/components/Tag';
 import classnames from 'classnames';
 
@@ -65,11 +65,15 @@ const MinePage: React.FC = () => {
             <Text className={styles.statLabel}>预约记录</Text>
           </View>
           <View className={styles.statItem}>
-            <Text className={styles.statNumber}>{reservations.filter(r => r.status === 'locked').length}</Text>
+            <Text className={styles.statNumber}>
+              {reservations.filter(r => (r.status === 'locked' || r.status === 'confirmed') && !isExpired(r.expireDate)).length}
+            </Text>
             <Text className={styles.statLabel}>锁价中</Text>
           </View>
           <View className={styles.statItem}>
-            <Text className={styles.statNumber}>0</Text>
+            <Text className={styles.statNumber}>
+              {reservations.filter(r => r.status === 'completed' || r.status === 'reconfirmed').length}
+            </Text>
             <Text className={styles.statLabel}>已完成</Text>
           </View>
         </View>
@@ -117,6 +121,17 @@ const MinePage: React.FC = () => {
                       )}
                     </View>
                     <Text className={styles.reservationInfo}>{r.clinicName}</Text>
+                    {r.lastIntention && (
+                      <View className={styles.reservationIntention}>
+                        <Text className={styles.intentionIcon}>{getIntentionIcon(r.lastIntention)}</Text>
+                        <Text className={styles.intentionText}>{getIntentionText(r.lastIntention)}</Text>
+                        {r.lastIntention === 'accept_advice' && r.confirmedAt && (
+                          <View className={styles.processedBadge}>
+                            <Text className={styles.processedBadgeText}>✓ 已处理</Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
                     {showExpire && !expired && (
                       <Text className={styles.reservationExpireInfo}>
                         剩余{days}天

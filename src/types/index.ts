@@ -91,6 +91,10 @@ export interface ReservationRecord {
   inapplicableReason?: string;
   lastIntention?: HandleIntention;
   confirmedAt?: string;
+  patientNote?: string;
+  demandType?: DemandType;
+  budgetRange?: BudgetRange;
+  recommendSummary?: string;
   communications: CommunicationItem[];
 }
 

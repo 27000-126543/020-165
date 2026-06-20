@@ -150,6 +150,20 @@
   font-weight: $font-weight-medium;
 }
 
+.processedBadge {
+  margin-left: auto;
+  padding: 4rpx 12rpx;
+  background-color: $color-success;
+  border-radius: $radius-xs;
+  flex-shrink: 0;
+}
+
+.processedBadgeText {
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
 .reasonRow {
   background-color: $color-warning-bg;
   border-radius: $radius-md;

@@ -2,15 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Input } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
-import { getPackageById } from '@/data/packages';
+import { getPackageById, getRecommendedPackages } from '@/data/packages';
 import { DentalPackage, ReservationRecord } from '@/types';
 import { useAppContext } from '@/store/app-context';
-import { formatDate, addDays, formatPrice, formatDateTime, generateId } from '@/utils';
+import { formatDate, addDays, formatPrice, formatDateTime, generateId, getBudgetLabel } from '@/utils';
 import classnames from 'classnames';
 
 const ReservationPage: React.FC = () => {
   const router = useRouter();
-  const { addReservation } = useAppContext();
+  const { addReservation, questionnaireData } = useAppContext();
   const [pkg, setPkg] = useState<DentalPackage | null>(null);
   const [selectedDays, setSelectedDays] = useState<number>(3);
   const [name, setName] = useState('');
@@ -32,6 +32,25 @@ const ReservationPage: React.FC = () => {
   const lockDate = useMemo(() => formatDate(new Date()), []);
   const expireDate = useMemo(() => formatDate(addDays(new Date(), selectedDays)), [selectedDays]);
 
+  const recommendContext = useMemo(() => {
+    if (!questionnaireData.demand || !pkg) return null;
+    const match = pkg.category === questionnaireData.demand;
+    if (!match) return null;
+    const rec = getRecommendedPackages(
+      questionnaireData.demand,
+      questionnaireData.budget,
+      questionnaireData.painLevel,
+      questionnaireData.hasXRay
+    );
+    const inRecommend = rec.packages.find(p => p.id === pkg.id);
+    if (!inRecommend) return null;
+    return {
+      demandType: questionnaireData.demand,
+      budgetRange: questionnaireData.budget,
+      recommendSummary: rec.explanation?.summary || ''
+    };
+  }, [questionnaireData, pkg]);
+
   const canSubmit = useMemo(() => {
     return pkg && name.trim() && phone.trim().length === 11;
   }, [pkg, name, phone]);
@@ -51,12 +70,13 @@ const ReservationPage: React.FC = () => {
       expireDate,
       status: 'locked',
       createTime,
+      ...(recommendContext || {}),
       communications: [
         {
           id: generateId(),
           time: createTime,
           type: 'patient',
-          content: `已成功锁定套餐价格，有效期至${expireDate}`
+          content: `已成功锁定套餐价格，有效期至${expireDate}${recommendContext ? `（当时预算：${getBudgetLabel(recommendContext.budgetRange || '')}）` : ''}`
         }
       ]
     };
