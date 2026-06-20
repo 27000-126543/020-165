@@ -1,0 +1,173 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.06);
+  }
+
+  &.compact {
+    padding: $spacing-md;
+  }
+}
+
+.cardHeader {
+  margin-bottom: $spacing-md;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.packageName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  flex: 1;
+  @include text-ellipsis;
+}
+
+.clinicInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clinicName {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.star {
+  color: #FFB300;
+  font-size: $font-size-sm;
+}
+
+.ratingText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.reviewCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-left: 4rpx;
+}
+
+.includes {
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.includesTitle {
+  margin-bottom: $spacing-sm;
+}
+
+.includesTitleText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.includesList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.includeItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.includeDot {
+  color: $color-success;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+}
+
+.includeName {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.includeCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.moreText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.priceInfo {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.priceSymbol {
+  font-size: $font-size-md;
+  color: $color-price;
+  font-weight: $font-weight-medium;
+}
+
+.price {
+  font-size: $font-size-xl;
+  color: $color-price;
+  font-weight: $font-weight-bold;
+}
+
+.originalPrice {
+  font-size: $font-size-sm;
+  color: $color-text-disabled;
+  text-decoration: line-through;
+  margin-left: $spacing-xs;
+}
+
+.actionBtn {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: 12rpx 28rpx;
+  border-radius: $radius-button;
+  transition: all $transition-fast;
+
+  &:active {
+    opacity: 0.85;
+    transform: scale(0.96);
+  }
+}
+
+.actionText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
