@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
-import { getStatusText, getStatusColor, formatPrice, getIntentionText, getIntentionIcon } from '@/utils';
+import { getStatusText, getStatusColor, formatPrice, getIntentionText, getIntentionIcon, getRemainingDays, isExpiringSoon, isExpired } from '@/utils';
 import Tag from '@/components/Tag';
 import { ReservationStatus } from '@/types';
 import classnames from 'classnames';
@@ -70,28 +70,38 @@ const ReservationsPage: React.FC = () => {
       <ScrollView className={styles.content} scrollY>
         {filteredReservations.length > 0 ? (
           <View className={styles.list}>
-            {filteredReservations.map(r => (
+            {filteredReservations.map(r => {
+              const expired = (r.status === 'locked' || r.status === 'confirmed') && isExpired(r.expireDate);
+              const expiring = (r.status === 'locked' || r.status === 'confirmed') && !expired && isExpiringSoon(r.expireDate);
+              const remainingDays = getRemainingDays(r.expireDate);
+              return (
               <View
                 key={r.id}
-                className={styles.card}
+                className={classnames(styles.card, expired && styles.expiredCard)}
                 onClick={() => goDetail(r.id)}
               >
                 <View className={styles.cardHeader}>
                   <Text className={styles.packageName}>{r.packageName}</Text>
                   <View>
-                    <Tag
-                      text={getStatusText(r.status)}
-                      type={
-                        r.status === 'locked'
-                          ? 'primary'
-                          : r.status === 'inapplicable'
-                          ? 'warning'
-                          : r.status === 'reconfirmed' || r.status === 'completed'
-                          ? 'success'
-                          : 'default'
-                      }
-                      size="sm"
-                    />
+                    {expired ? (
+                      <Tag text="已过期" type="error" size="sm" />
+                    ) : expiring ? (
+                      <Tag text={`⚠️ 即将过期`} type="warning" size="sm" />
+                    ) : (
+                      <Tag
+                        text={getStatusText(r.status)}
+                        type={
+                          r.status === 'locked'
+                            ? 'primary'
+                            : r.status === 'inapplicable'
+                            ? 'warning'
+                            : r.status === 'reconfirmed' || r.status === 'completed'
+                            ? 'success'
+                            : 'default'
+                        }
+                        size="sm"
+                      />
+                    )}
                   </View>
                 </View>
                 <Text className={styles.clinic}>{r.clinicName}</Text>
@@ -103,6 +113,18 @@ const ReservationsPage: React.FC = () => {
                   <Text className={styles.priceLabel}>有效期至</Text>
                   <Text className={styles.infoValue}>{r.expireDate}</Text>
                 </View>
+
+                {(r.status === 'locked' || r.status === 'confirmed') && (
+                  <View className={styles.expireTagRow}>
+                    {expired ? (
+                      <Text className={styles.expireTagExpired}>已过期</Text>
+                    ) : expiring ? (
+                      <Text className={styles.expireWarning}>⚠️ 即将过期，仅剩{remainingDays}天</Text>
+                    ) : (
+                      <Text className={styles.expireTagNormal}>剩余{remainingDays}天</Text>
+                    )}
+                  </View>
+                )}
 
                 {r.lastIntention && (
                   <View className={styles.intentionRow}>
@@ -128,7 +150,8 @@ const ReservationsPage: React.FC = () => {
                   <Text className={styles.arrow}>查看详情 ›</Text>
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
         ) : (
           <View className={styles.empty}>

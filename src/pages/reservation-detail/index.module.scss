@@ -554,3 +554,103 @@
   justify-content: center;
   font-weight: $font-weight-bold;
 }
+
+.expireWarningRow {
+  margin-top: $spacing-sm;
+}
+
+.expireTagNormal {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.expireTagWarning {
+  font-size: $font-size-sm;
+  color: #FF9A2E;
+  font-weight: $font-weight-semibold;
+}
+
+.expireTagExpired {
+  font-size: $font-size-sm;
+  color: #F53F3F;
+  font-weight: $font-weight-semibold;
+}
+
+.textWarning {
+  color: $color-warning !important;
+  font-weight: $font-weight-semibold;
+}
+
+.textExpired {
+  color: $color-error !important;
+  font-weight: $font-weight-semibold;
+}
+
+.alternativeCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.alternativeInfo {
+  flex: 1;
+}
+
+.alternativeName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.alternativeMeta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.alternativePrice {
+  font-size: $font-size-sm;
+  color: $color-price;
+  font-weight: $font-weight-bold;
+}
+
+.alternativeRating {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.alternativeBtn {
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  flex-shrink: 0;
+  margin-left: $spacing-md;
+}
+
+.alternativeBtnText {
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
+.commTimeRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: 4rpx;
+}
+
+.commConfirmedAt {
+  font-size: $font-size-xs;
+  color: $color-success;
+}

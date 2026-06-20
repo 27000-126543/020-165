@@ -3,9 +3,9 @@ import { View, Text, Textarea } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
-import { getPackageById } from '@/data/packages';
-import { getStatusText, getStatusColor, formatPrice, formatDateTime, getIntentionText, getIntentionIcon } from '@/utils';
-import { ReservationRecord, DentalPackage, HandleIntention } from '@/types';
+import { getPackageById, getPackagesByCategory } from '@/data/packages';
+import { getStatusText, getStatusColor, formatPrice, formatDateTime, getIntentionText, getIntentionIcon, getRemainingDays, isExpiringSoon, isExpired, getDemandLabel } from '@/utils';
+import { ReservationRecord, DentalPackage, HandleIntention, DemandType } from '@/types';
 import classnames from 'classnames';
 
 const intentionOptions: { value: HandleIntention; label: string; icon: string; desc: string }[] = [
@@ -71,7 +71,8 @@ const ReservationDetailPage: React.FC = () => {
     }
     if (reservation) {
       const content = patientInput.trim() || getIntentionText(selectedIntention || '');
-      addCommunication(reservation.id, content, 'patient', selectedIntention || undefined);
+      const confirmedAt = selectedIntention === 'accept_advice' ? formatDateTime(new Date()) : undefined;
+      addCommunication(reservation.id, content, 'patient', selectedIntention || undefined, confirmedAt);
       setPatientInput('');
       setSelectedIntention(null);
       Taro.showToast({ title: '提交成功', icon: 'success' });
@@ -111,6 +112,28 @@ const ReservationDetailPage: React.FC = () => {
           <Text className={styles.price}>{formatPrice(reservation.price)}</Text>
           <Text className={styles.priceLabel}> 锁定价格</Text>
         </View>
+        {(() => {
+          const days = getRemainingDays(reservation.expireDate);
+          if (days < 0) {
+            return (
+              <View className={styles.expireWarningRow}>
+                <Text className={styles.expireTagExpired}>🔴 已过期</Text>
+              </View>
+            );
+          }
+          if (days <= 3) {
+            return (
+              <View className={styles.expireWarningRow}>
+                <Text className={styles.expireTagWarning}>⚠️ 即将过期，仅剩{days}天</Text>
+              </View>
+            );
+          }
+          return (
+            <View className={styles.expireWarningRow}>
+              <Text className={styles.expireTagNormal}>有效期还剩{days}天</Text>
+            </View>
+          );
+        })()}
       </View>
 
       <View className={styles.content}>
@@ -128,6 +151,41 @@ const ReservationDetailPage: React.FC = () => {
             </View>
           </View>
         )}
+
+        {needReconfirm && reservation.lastIntention === 'see_alternative' && (() => {
+          const currentPkg = getPackageById(reservation.packageId);
+          if (!currentPkg) return null;
+          const alternatives = getPackagesByCategory(currentPkg.category as DemandType)
+            .filter(p => p.id !== reservation.packageId)
+            .slice(0, 2);
+          if (alternatives.length === 0) return null;
+          return (
+            <View className={styles.section}>
+              <Text className={styles.sectionTitle}>
+                <Text className={styles.sectionIcon}>🔍</Text>
+                替代套餐推荐
+              </Text>
+              {alternatives.map(alt => (
+                <View
+                  key={alt.id}
+                  className={styles.alternativeCard}
+                  onClick={() => Taro.navigateTo({ url: `/pages/package-detail/index?id=${alt.id}` })}
+                >
+                  <View className={styles.alternativeInfo}>
+                    <Text className={styles.alternativeName}>{alt.name}</Text>
+                    <View className={styles.alternativeMeta}>
+                      <Text className={styles.alternativePrice}>¥{formatPrice(alt.price)}</Text>
+                      <Text className={styles.alternativeRating}>⭐ {alt.rating}</Text>
+                    </View>
+                  </View>
+                  <View className={styles.alternativeBtn}>
+                    <Text className={styles.alternativeBtnText}>查看详情</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          );
+        })()}
 
         <View className={styles.section}>
           <Text className={styles.sectionTitle}>
@@ -153,6 +211,19 @@ const ReservationDetailPage: React.FC = () => {
           <View className={styles.infoRow}>
             <Text className={styles.infoLabel}>有效期至</Text>
             <Text className={styles.infoValue}>{reservation.expireDate}</Text>
+          </View>
+          <View className={styles.infoRow}>
+            <Text className={styles.infoLabel}>剩余天数</Text>
+            {(() => {
+              const days = getRemainingDays(reservation.expireDate);
+              if (days < 0) {
+                return <Text className={classnames(styles.infoValue, styles.textExpired)}>已过期{-days}天</Text>;
+              }
+              if (days <= 3) {
+                return <Text className={classnames(styles.infoValue, styles.textWarning)}>仅剩{days}天</Text>;
+              }
+              return <Text className={styles.infoValue}>{days}天</Text>;
+            })()}
           </View>
           <View className={styles.infoRow}>
             <Text className={styles.infoLabel}>创建时间</Text>
@@ -209,7 +280,12 @@ const ReservationDetailPage: React.FC = () => {
                       )}
                     </View>
                     <Text className={styles.commText}>{comm.content}</Text>
-                    <Text className={styles.commTime}>{comm.time}</Text>
+                    <View className={styles.commTimeRow}>
+                      <Text className={styles.commTime}>{comm.time}</Text>
+                      {comm.confirmedAt && (
+                        <Text className={styles.commConfirmedAt}>确认时间: {comm.confirmedAt}</Text>
+                      )}
+                    </View>
                   </View>
                 </View>
               ))}

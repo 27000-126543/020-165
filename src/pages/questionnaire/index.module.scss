@@ -170,6 +170,10 @@
     border: 2rpx solid rgba($color-success, 0.3);
   }
 
+  &.result-sufficient {
+    border: 2rpx solid rgba($color-primary, 0.3);
+  }
+
   &.result-partial {
     border: 2rpx solid rgba($color-warning, 0.3);
   }
@@ -506,4 +510,84 @@
 .compareMore {
   font-size: $font-size-xs;
   color: $color-text-tertiary;
+}
+
+.explanationCard {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.explanationTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.explanationItem {
+  margin-bottom: $spacing-md;
+}
+
+.explanationLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-primary;
+  margin-bottom: 4rpx;
+}
+
+.explanationText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.explanationSummary {
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-top: $spacing-sm;
+}
+
+.explanationSummaryText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  line-height: $line-height-normal;
+}
+
+.compareHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.clearCompare {
+  font-size: $font-size-sm;
+  color: $color-error;
+}
+
+.compareReplaceTip {
+  background-color: $color-warning-bg;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.compareReplaceTipText {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  line-height: $line-height-normal;
+}
+
+.compareHighlight {
+  font-size: $font-size-xs;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+  background-color: rgba($color-success, 0.1);
+  padding: 2rpx 12rpx;
+  border-radius: $radius-round;
+  margin-top: 4rpx;
 }

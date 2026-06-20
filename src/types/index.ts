@@ -74,6 +74,7 @@ export interface CommunicationItem {
   type: 'doctor' | 'patient';
   content: string;
   intention?: HandleIntention;
+  confirmedAt?: string;
 }
 
 // 预约记录
@@ -89,15 +90,27 @@ export interface ReservationRecord {
   createTime: string;
   inapplicableReason?: string;
   lastIntention?: HandleIntention;
+  confirmedAt?: string;
   communications: CommunicationItem[];
+}
+
+export type BudgetMatchType = 'perfect' | 'sufficient' | 'partial' | 'none';
+
+export interface RecommendExplanation {
+  demandReason: string;
+  budgetReason: string;
+  painReason?: string;
+  xrayReason?: string;
+  summary: string;
 }
 
 // 推荐匹配结果
 export interface RecommendResult {
   packages: DentalPackage[];
-  budgetMatch: 'perfect' | 'partial' | 'none';
+  budgetMatch: BudgetMatchType;
   budgetTip?: string;
   alternativeTip?: string;
+  explanation?: RecommendExplanation;
 }
 
 // 诊所信息

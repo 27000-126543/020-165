@@ -244,3 +244,25 @@
   color: $color-text-white;
   font-weight: $font-weight-medium;
 }
+
+.reservationItemExpired {
+  border-left: 6rpx solid $color-error;
+}
+
+.reservationStatusExpired {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-error;
+}
+
+.reservationStatusWarning {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-warning;
+}
+
+.reservationExpireInfo {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+}

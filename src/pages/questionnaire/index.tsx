@@ -29,6 +29,7 @@ const intentionOptions = [
 
 const matchLabelMap = {
   perfect: { label: '完全匹配', type: 'success' as const, icon: '✅' },
+  sufficient: { label: '预算充足', type: 'success' as const, icon: '💎' },
   partial: { label: '预算略超', type: 'warning' as const, icon: '💡' },
   none: { label: '暂无匹配', type: 'error' as const, icon: '😅' }
 };
@@ -60,7 +61,12 @@ const QuestionnairePage: React.FC = () => {
     if (currentStep < 5) {
       return { packages: [], budgetMatch: 'none' };
     }
-    return getRecommendedPackages(questionnaireData.demand, questionnaireData.budget);
+    return getRecommendedPackages(
+      questionnaireData.demand,
+      questionnaireData.budget,
+      questionnaireData.painLevel,
+      questionnaireData.hasXRay
+    );
   }, [currentStep, questionnaireData]);
 
   const comparePackages = useMemo(() => {
@@ -107,6 +113,68 @@ const QuestionnairePage: React.FC = () => {
       }
       return [...prev, id];
     });
+  };
+
+  const clearCompare = () => {
+    setCompareIds([]);
+    setShowCompare(false);
+  };
+
+  const getResultTitle = () => {
+    switch (recommendResult.budgetMatch) {
+      case 'perfect':
+        return '已为您找到合适方案';
+      case 'sufficient':
+        return '您的预算非常充裕';
+      case 'partial':
+        return '预算略有差异，为您推荐相近选项';
+      case 'none':
+        return '暂无完全匹配的套餐';
+      default:
+        return '';
+    }
+  };
+
+  const getResultDesc = () => {
+    switch (recommendResult.budgetMatch) {
+      case 'perfect':
+        return '根据您的需求和预算，我们为您推荐以下套餐';
+      case 'sufficient':
+        return '以下所有方案都在预算范围内，您可以根据个人偏好选择更高配置';
+      case 'partial':
+        return '以下套餐价格接近您的预算，供您参考对比';
+      case 'none':
+        return '您可以调整预算或查看其他建议方案';
+      default:
+        return '';
+    }
+  };
+
+  const getCompareHighlight = (field: string, value: number | string) => {
+    if (comparePackages.length < 2) return '';
+    const values = comparePackages.map(pkg => {
+      switch (field) {
+        case 'price':
+          return pkg.price;
+        case 'followUpCount':
+          return pkg.followUpCount;
+        case 'extraItems':
+          return pkg.extraItems.length;
+        default:
+          return 0;
+      }
+    });
+    const minVal = Math.min(...values);
+    switch (field) {
+      case 'price':
+        return value === minVal ? '更省钱' : '';
+      case 'followUpCount':
+        return value === minVal ? '更少复诊' : '';
+      case 'extraItems':
+        return value === minVal ? '另收风险更少' : '';
+      default:
+        return '';
+    }
   };
 
   const renderOptions = () => {
@@ -260,20 +328,8 @@ const QuestionnairePage: React.FC = () => {
                 <Text className={styles.resultIcon}>{matchInfo.icon}</Text>
                 <Tag text={matchInfo.label} type={matchInfo.type} size="md" />
               </View>
-              <Text className={styles.resultTitle}>
-                {recommendResult.budgetMatch === 'perfect'
-                  ? '已为您找到合适方案'
-                  : recommendResult.budgetMatch === 'partial'
-                  ? '预算略有差异，为您推荐相近选项'
-                  : '暂无完全匹配的套餐'}
-              </Text>
-              <Text className={styles.resultDesc}>
-                {recommendResult.budgetMatch === 'perfect'
-                  ? '根据您的需求和预算，我们为您推荐以下套餐'
-                  : recommendResult.budgetMatch === 'partial'
-                  ? '以下套餐价格接近您的预算，供您参考对比'
-                  : '您可以调整预算或查看其他建议方案'}
-              </Text>
+              <Text className={styles.resultTitle}>{getResultTitle()}</Text>
+              <Text className={styles.resultDesc}>{getResultDesc()}</Text>
 
               <View className={styles.currentBudget}>
                 <Text className={styles.currentBudgetLabel}>当前预算：</Text>
@@ -317,17 +373,59 @@ const QuestionnairePage: React.FC = () => {
               )}
             </View>
 
+            {recommendResult.explanation && (
+              <View className={styles.explanationCard}>
+                <Text className={styles.explanationTitle}>为什么推荐给我</Text>
+                <View className={styles.explanationItem}>
+                  <Text className={styles.explanationLabel}>诉求影响</Text>
+                  <Text className={styles.explanationText}>{recommendResult.explanation.demandReason}</Text>
+                </View>
+                <View className={styles.explanationItem}>
+                  <Text className={styles.explanationLabel}>预算影响</Text>
+                  <Text className={styles.explanationText}>{recommendResult.explanation.budgetReason}</Text>
+                </View>
+                {recommendResult.explanation.painReason && (
+                  <View className={styles.explanationItem}>
+                    <Text className={styles.explanationLabel}>疼痛影响</Text>
+                    <Text className={styles.explanationText}>{recommendResult.explanation.painReason}</Text>
+                  </View>
+                )}
+                {recommendResult.explanation.xrayReason && (
+                  <View className={styles.explanationItem}>
+                    <Text className={styles.explanationLabel}>拍片影响</Text>
+                    <Text className={styles.explanationText}>{recommendResult.explanation.xrayReason}</Text>
+                  </View>
+                )}
+                <View className={styles.explanationSummary}>
+                  <Text className={styles.explanationSummaryText}>{recommendResult.explanation.summary}</Text>
+                </View>
+              </View>
+            )}
+
             {showCompare && comparePackages.length >= 2 && (
               <View className={styles.compareSection}>
                 <View className={styles.compareHeader}>
                   <Text className={styles.sectionTitle}>套餐对比（{comparePackages.length}个）</Text>
-                  <Text
-                    className={styles.closeCompare}
-                    onClick={() => setShowCompare(false)}
-                  >
-                    收起 ×
-                  </Text>
+                  <View className={styles.compareHeaderActions}>
+                    <Text
+                      className={styles.clearCompare}
+                      onClick={clearCompare}
+                    >
+                      清空对比
+                    </Text>
+                    <Text
+                      className={styles.closeCompare}
+                      onClick={() => setShowCompare(false)}
+                    >
+                      收起 ×
+                    </Text>
+                  </View>
                 </View>
+                {compareIds.length >= 3 && (
+                  <View className={styles.compareReplaceTip}>
+                    <Text className={styles.compareReplaceTipText}>已选3个，点击已选项可取消后再选其他套餐替换</Text>
+                  </View>
+                )}
                 <ScrollView scrollX className={styles.compareScroll}>
                   <View className={styles.compareTable}>
                     <View className={styles.compareRowHeader}>
@@ -345,12 +443,18 @@ const QuestionnairePage: React.FC = () => {
                       <View className={styles.compareCellLabel}>
                         <Text className={styles.compareCellText}>套餐价格</Text>
                       </View>
-                      {comparePackages.map(pkg => (
-                        <View key={pkg.id} className={styles.compareCell}>
-                          <Text className={styles.comparePrice}>¥{formatPrice(pkg.price)}</Text>
-                          <Text className={styles.compareOriginal}>¥{formatPrice(pkg.originalPrice)}</Text>
-                        </View>
-                      ))}
+                      {comparePackages.map(pkg => {
+                        const highlight = getCompareHighlight('price', pkg.price);
+                        return (
+                          <View key={pkg.id} className={styles.compareCell}>
+                            <Text className={styles.comparePrice}>¥{formatPrice(pkg.price)}</Text>
+                            <Text className={styles.compareOriginal}>¥{formatPrice(pkg.originalPrice)}</Text>
+                            {highlight && (
+                              <Text className={styles.compareHighlight}>{highlight}</Text>
+                            )}
+                          </View>
+                        );
+                      })}
                     </View>
 
                     <View className={styles.compareRow}>
@@ -397,30 +501,42 @@ const QuestionnairePage: React.FC = () => {
                       <View className={styles.compareCellLabel}>
                         <Text className={styles.compareCellText}>复诊次数</Text>
                       </View>
-                      {comparePackages.map(pkg => (
-                        <View key={pkg.id} className={styles.compareCell}>
-                          <Text className={styles.compareCellText}>{pkg.followUpCount}次</Text>
-                        </View>
-                      ))}
+                      {comparePackages.map(pkg => {
+                        const highlight = getCompareHighlight('followUpCount', pkg.followUpCount);
+                        return (
+                          <View key={pkg.id} className={styles.compareCell}>
+                            <Text className={styles.compareCellText}>{pkg.followUpCount}次</Text>
+                            {highlight && (
+                              <Text className={styles.compareHighlight}>{highlight}</Text>
+                            )}
+                          </View>
+                        );
+                      })}
                     </View>
 
                     <View className={styles.compareRow}>
                       <View className={styles.compareCellLabel}>
                         <Text className={styles.compareCellText}>另收项目</Text>
                       </View>
-                      {comparePackages.map(pkg => (
-                        <View key={pkg.id} className={styles.compareCell}>
-                          {pkg.extraItems.length > 0 ? (
-                            pkg.extraItems.slice(0, 2).map((item, idx) => (
-                              <Text key={idx} className={styles.compareExtraText}>
-                                • {item.name} ({item.priceRange})
-                              </Text>
-                            ))
-                          ) : (
-                            <Text className={styles.compareCellText}>无</Text>
-                          )}
-                        </View>
-                      ))}
+                      {comparePackages.map(pkg => {
+                        const highlight = getCompareHighlight('extraItems', pkg.extraItems.length);
+                        return (
+                          <View key={pkg.id} className={styles.compareCell}>
+                            {pkg.extraItems.length > 0 ? (
+                              pkg.extraItems.slice(0, 2).map((item, idx) => (
+                                <Text key={idx} className={styles.compareExtraText}>
+                                  • {item.name} ({item.priceRange})
+                                </Text>
+                              ))
+                            ) : (
+                              <Text className={styles.compareCellText}>无</Text>
+                            )}
+                            {highlight && (
+                              <Text className={styles.compareHighlight}>{highlight}</Text>
+                            )}
+                          </View>
+                        );
+                      })}
                     </View>
                   </View>
                 </ScrollView>

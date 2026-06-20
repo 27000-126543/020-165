@@ -3,8 +3,9 @@ import { View, Text, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
-import { getStatusText, getStatusColor, formatPrice } from '@/utils';
+import { getStatusText, getStatusColor, formatPrice, getRemainingDays, isExpiringSoon, isExpired } from '@/utils';
 import Tag from '@/components/Tag';
+import classnames from 'classnames';
 
 const MinePage: React.FC = () => {
   const { reservations } = useAppContext();
@@ -85,35 +86,55 @@ const MinePage: React.FC = () => {
           </View>
           {activeReservations.length > 0 ? (
             <View className={styles.reservationList}>
-              {activeReservations.map(r => (
-                <View
-                  key={r.id}
-                  className={styles.reservationItem}
-                  onClick={() =>
-                    Taro.navigateTo({
-                      url: `/pages/reservation-detail/index?id=${r.id}`
-                    })
-                  }
-                >
-                  <View className={styles.reservationHeader}>
-                    <Text className={styles.reservationName}>{r.packageName}</Text>
-                    <Text
-                      className={styles.reservationStatus}
-                      style={{ color: getStatusColor(r.status) }}
-                    >
-                      {getStatusText(r.status)}
-                    </Text>
-                  </View>
-                  <Text className={styles.reservationInfo}>{r.clinicName}</Text>
-                  <View className={styles.reservationFooter}>
-                    <Text className={styles.reservationPrice}>¥{formatPrice(r.price)}</Text>
-                    {r.status === 'inapplicable' && (
-                      <Tag text="待确认" type="warning" size="sm" />
+              {activeReservations.map(r => {
+                const expired = isExpired(r.expireDate);
+                const expiring = isExpiringSoon(r.expireDate);
+                const days = getRemainingDays(r.expireDate);
+                const showExpire = r.status === 'locked' || r.status === 'confirmed';
+                return (
+                  <View
+                    key={r.id}
+                    className={classnames(styles.reservationItem, expired && showExpire && styles.reservationItemExpired)}
+                    onClick={() =>
+                      Taro.navigateTo({
+                        url: `/pages/reservation-detail/index?id=${r.id}`
+                      })
+                    }
+                  >
+                    <View className={styles.reservationHeader}>
+                      <Text className={styles.reservationName}>{r.packageName}</Text>
+                      {showExpire && expired ? (
+                        <Text className={styles.reservationStatusExpired}>已过期</Text>
+                      ) : showExpire && expiring ? (
+                        <Text className={styles.reservationStatusWarning}>即将过期</Text>
+                      ) : (
+                        <Text
+                          className={styles.reservationStatus}
+                          style={{ color: getStatusColor(r.status) }}
+                        >
+                          {getStatusText(r.status)}
+                        </Text>
+                      )}
+                    </View>
+                    <Text className={styles.reservationInfo}>{r.clinicName}</Text>
+                    {showExpire && !expired && (
+                      <Text className={styles.reservationExpireInfo}>
+                        剩余{days}天
+                      </Text>
                     )}
-                    <Text className={styles.reservationArrow}>查看详情 ›</Text>
+                    <View className={styles.reservationFooter}>
+                      <Text className={styles.reservationPrice}>¥{formatPrice(r.price)}</Text>
+                      {r.status === 'inapplicable' && (
+                        <Tag text="待确认" type="warning" size="sm" />
+                      )}
+                      {showExpire && expiring && !expired && (
+                        <Tag text="即将过期" type="error" size="sm" />
+                      )}
+                      <Text className={styles.reservationArrow}>查看详情 ›</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           ) : (
             <View className={styles.emptyReservation}>

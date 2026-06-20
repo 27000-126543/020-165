@@ -109,3 +109,45 @@ export const getBudgetLabel = (budget: string): string => {
   };
   return map[budget] || budget;
 };
+
+export const getRemainingDays = (expireDate: string): number => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const expire = new Date(expireDate);
+  expire.setHours(0, 0, 0, 0);
+  return Math.ceil((expire.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+export const isExpiringSoon = (expireDate: string, threshold: number = 3): boolean => {
+  const days = getRemainingDays(expireDate);
+  return days >= 0 && days <= threshold;
+};
+
+export const isExpired = (expireDate: string): boolean => {
+  return getRemainingDays(expireDate) < 0;
+};
+
+export const getPainLevelLabel = (pain: string): string => {
+  const map: Record<string, string> = {
+    none: '没有疼痛',
+    mild: '轻微不适',
+    moderate: '明显疼痛',
+    severe: '剧烈疼痛'
+  };
+  return map[pain] || pain;
+};
+
+export const getAgeGroupLabel = (age: string): string => {
+  const map: Record<string, string> = {
+    child: '12岁以下',
+    teen: '12-18岁',
+    adult: '18-60岁',
+    senior: '60岁以上'
+  };
+  return map[age] || age;
+};
+
+export const getXrayLabel = (hasXRay: boolean | null): string => {
+  if (hasXRay === null) return '未选择';
+  return hasXRay ? '已拍过X光片' : '没有拍过';
+};

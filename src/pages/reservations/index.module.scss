@@ -75,9 +75,14 @@
   padding: $spacing-lg;
   box-shadow: $shadow-card;
   transition: all $transition-fast;
+  border: 2rpx solid transparent;
 
   &:active {
     transform: scale(0.99);
+  }
+
+  &.expiredCard {
+    border-color: $color-error;
   }
 }
 
@@ -217,6 +222,83 @@
 
 .emptyBtnText {
   font-size: $font-size-sm;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
+.expireTagRow {
+  display: flex;
+  align-items: center;
+  margin-top: $spacing-xs;
+}
+
+.expireTagExpired {
+  font-size: $font-size-xs;
+  color: $color-error;
+  font-weight: $font-weight-semibold;
+}
+
+.expireWarning {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  font-weight: $font-weight-semibold;
+}
+
+.expireTagNormal {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.alternativeSection {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.alternativeCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.alternativeName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.alternativePrice {
+  font-size: $font-size-sm;
+  color: $color-price;
+  font-weight: $font-weight-bold;
+}
+
+.alternativeRating {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.alternativeBtn {
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  flex-shrink: 0;
+}
+
+.alternativeBtnText {
+  font-size: $font-size-xs;
   color: $color-text-white;
   font-weight: $font-weight-medium;
 }

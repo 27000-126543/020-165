@@ -11,7 +11,7 @@ interface AppContextType {
   addReservation: (reservation: ReservationRecord) => void;
   updateReservation: (id: string, data: Partial<ReservationRecord>) => void;
   markInapplicable: (id: string, reason: string) => void;
-  addCommunication: (id: string, content: string, type: 'doctor' | 'patient', intention?: HandleIntention) => void;
+  addCommunication: (id: string, content: string, type: 'doctor' | 'patient', intention?: HandleIntention, confirmedAt?: string) => void;
   getReservationById: (id: string) => ReservationRecord | undefined;
   isLoaded: boolean;
 }
@@ -153,25 +153,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     console.log('[AppContext] 标记不适用:', id);
   };
 
-  const addCommunication = (id: string, content: string, type: 'doctor' | 'patient', intention?: HandleIntention) => {
+  const addCommunication = (id: string, content: string, type: 'doctor' | 'patient', intention?: HandleIntention, confirmedAt?: string) => {
     const commItem: CommunicationItem = {
       id: generateId(),
       time: formatDateTime(new Date()),
       type,
       content,
-      intention
+      intention,
+      confirmedAt
     };
     setReservations(prev =>
-      prev.map(r =>
-        r.id === id
-          ? {
-              ...r,
-              status: type === 'patient' ? 'reconfirmed' : r.status,
-              lastIntention: intention || r.lastIntention,
-              communications: [...r.communications, commItem]
-            }
-          : r
-      )
+      prev.map(r => {
+        if (r.id !== id) return r;
+        const newComms = [...r.communications, commItem];
+        const updateData: Partial<ReservationRecord> = {
+          status: type === 'patient' ? 'reconfirmed' : r.status,
+          lastIntention: intention || r.lastIntention,
+          communications: newComms
+        };
+        if (confirmedAt) {
+          updateData.confirmedAt = confirmedAt;
+        }
+        return { ...r, ...updateData };
+      })
     );
     console.log('[AppContext] 新增沟通记录:', id, type, intention || '');
   };

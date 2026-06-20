@@ -1,4 +1,4 @@
-import { DentalPackage, DemandType, RecommendResult, BudgetRange } from '@/types';
+import { DentalPackage, DemandType, RecommendResult, BudgetRange, RecommendExplanation } from '@/types';
 import { getBudgetMax, getBudgetMin } from '@/utils';
 
 export const packagesData: DentalPackage[] = [
@@ -284,7 +284,33 @@ export const getPackagesByBudget = (budget: string): DentalPackage[] => {
   }
 };
 
-export const getRecommendedPackages = (demand: DemandType | null, budget: BudgetRange | null): RecommendResult => {
+const demandExplanationMap: Record<DemandType, string> = {
+  clean: '您选择了牙齿清洁，我们筛选了洁牙类套餐，帮您去除牙菌斑和牙结石，维护口腔健康。',
+  fill: '您选择了蛀牙修补，我们筛选了补牙类套餐，根据蛀牙程度和位置推荐合适的修复方案。',
+  whiten: '您选择了牙齿变白，我们筛选了美白类套餐，从诊间冷光到居家美白供您选择。',
+  implant: '您选择了缺牙修复，我们筛选了种植牙类套餐，不同品牌种植体满足不同预算和品质需求。'
+};
+
+const budgetExplanationMap: Record<BudgetRange, string> = {
+  low: '实惠型预算（500元以内），优先推荐性价比高的基础方案。',
+  medium: '舒适型预算（500-2000元），可以覆盖大部分洁牙和补牙项目。',
+  high: '品质型预算（2000-8000元），可以选择更全面的检查和更高品质的材料。',
+  premium: '高端型预算（8000元以上），预算充足，可选各类高端种植体和升级配置。'
+};
+
+const painExplanationMap: Record<string, string> = {
+  none: '没有疼痛，说明问题可能还在早期，尽早检查治疗效果更好、费用更低。',
+  mild: '轻微不适，建议尽快检查，早发现早治疗能避免更复杂的问题。',
+  moderate: '明显疼痛，可能已经有较深龋齿或牙髓问题，建议优先选择含详细检查的套餐。',
+  severe: '剧烈疼痛，可能需要根管治疗等紧急处理，建议尽快到院检查，套餐外可能有额外项目。'
+};
+
+const xrayExplanationMap: Record<string, string> = {
+  true: '您已拍过X光片，到院后医生可以直接参考，部分套餐的影像检查费用可能可以减免。',
+  false: '您未拍过X光片，推荐选择含影像检查的套餐，帮助医生准确评估口腔状况。'
+};
+
+export const getRecommendedPackages = (demand: DemandType | null, budget: BudgetRange | null, painLevel?: string | null, hasXRay?: boolean | null): RecommendResult => {
   if (!demand) {
     return {
       packages: [],
@@ -297,14 +323,55 @@ export const getRecommendedPackages = (demand: DemandType | null, budget: Budget
   const budgetMax = budget ? getBudgetMax(budget) : 999999;
   const budgetMin = budget ? getBudgetMin(budget) : 0;
 
+  const buildExplanation = (): RecommendExplanation => {
+    return {
+      demandReason: demandExplanationMap[demand] || '根据您的诉求筛选了对应类型的套餐。',
+      budgetReason: budget ? budgetExplanationMap[budget] : '未限定预算，为您展示所有可选方案。',
+      painReason: painLevel ? painExplanationMap[painLevel] : undefined,
+      xrayReason: hasXRay !== null && hasXRay !== undefined ? xrayExplanationMap[String(hasXRay)] : undefined,
+      summary: ''
+    };
+  };
+
+  const maxPriceInCategory = Math.max(...demandPackages.map(p => p.price));
+  const allWithinBudget = demandPackages.every(pkg => pkg.price <= budgetMax);
+  const allBelowBudgetMin = demandPackages.every(pkg => pkg.price < budgetMin);
+
+  if (allWithinBudget && allBelowBudgetMin && budget) {
+    const sorted = [...demandPackages].sort((a, b) => b.price - a.price);
+    const explanation = buildExplanation();
+    explanation.budgetReason = `您的预算充足，该类目下所有套餐都在预算范围内，甚至还有更高配置可选。已按品质从高到低为您排列。`;
+    explanation.summary = '预算非常宽裕，所有方案均可选择，推荐关注更高配置的套餐获得更好体验。';
+    return {
+      packages: sorted.slice(0, 3),
+      budgetMatch: 'sufficient',
+      explanation
+    };
+  }
+
+  if (allWithinBudget) {
+    const sorted = [...demandPackages].sort((a, b) => b.price - a.price);
+    const explanation = buildExplanation();
+    explanation.summary = '您的预算可以覆盖该类目下所有套餐，可以根据个人偏好选择。';
+    return {
+      packages: sorted.slice(0, 3),
+      budgetMatch: 'perfect',
+      explanation
+    };
+  }
+
   const perfectMatch = demandPackages.filter(
-    pkg => pkg.price >= budgetMin && pkg.price <= budgetMax
+    pkg => pkg.price <= budgetMax
   );
 
   if (perfectMatch.length > 0) {
+    const sorted = [...perfectMatch].sort((a, b) => b.price - a.price);
+    const explanation = buildExplanation();
+    explanation.summary = `您的预算可以覆盖部分套餐，已优先为您展示预算内的方案。`;
     return {
-      packages: perfectMatch.slice(0, 3),
-      budgetMatch: 'perfect'
+      packages: sorted.slice(0, 3),
+      budgetMatch: 'perfect',
+      explanation
     };
   }
 
@@ -316,26 +383,29 @@ export const getRecommendedPackages = (demand: DemandType | null, budget: Budget
     const lowestPrice = Math.min(...demandPackages.map(p => p.price));
     let budgetTip = '';
     let alternativeTip = '';
+    const explanation = buildExplanation();
 
     if (demand === 'implant') {
-      budgetTip = `您选择的缺牙修复类项目价格相对较高，最低约 ¥${lowestPrice} 起。`;
-      alternativeTip = '建议您可以先到诊所做口腔检查，了解具体治疗方案后再决定。也可以考虑活动义齿等更经济的修复方式，可咨询医生了解详情。';
+      budgetTip = `缺牙修复类项目价格相对较高，最低约 ¥${lowestPrice} 起。`;
+      alternativeTip = '建议先到诊所做口腔检查，了解具体方案后再决定。也可咨询活动义齿等更经济的修复方式。';
     } else if (demand === 'whiten') {
       budgetTip = `美白类项目最低约 ¥${lowestPrice} 起，略高于您的预算。`;
-      alternativeTip = '您也可以先做洁牙套餐，去除表面色素沉着，日常注意少喝深色饮品，也能在一定程度上改善牙齿色泽。';
+      alternativeTip = '您也可以先做洁牙套餐，去除表面色素沉着，也能在一定程度上改善牙齿色泽。';
     } else if (demand === 'fill') {
       budgetTip = `补牙价格根据蛀牙程度不同有所差异，最低约 ¥${lowestPrice} 起。`;
-      alternativeTip = '建议尽早治疗，越早治疗费用越低。可以到店先拍片检查，了解具体情况后确认最终费用。';
+      alternativeTip = '建议尽早治疗，越早治疗费用越低。可以到店先拍片检查再确认最终费用。';
     } else {
       budgetTip = `部分套餐价格略高于您的预算，已为您推荐价格最接近的选项。`;
       alternativeTip = '您也可以调整预算范围，或先到店咨询了解详情后再做决定。';
     }
 
+    explanation.summary = `当前诉求下的套餐价格超出预算，已为您推荐最接近预算的选项。`;
     return {
       packages: closeMatch,
       budgetMatch: 'partial',
       budgetTip,
-      alternativeTip
+      alternativeTip,
+      explanation
     };
   }
 
@@ -348,21 +418,24 @@ export const getRecommendedPackages = (demand: DemandType | null, budget: Budget
 
   let budgetTip = `当前${demandLabel}类项目价格均高于您的预算范围。`;
   let alternativeTip = '';
+  const explanation = buildExplanation();
 
   if (demand === 'implant') {
-    alternativeTip = '缺牙修复可以考虑活动义齿、固定桥等更经济的方案。建议先到诊所拍片检查，让医生根据您的口腔条件给出具体建议和费用预估。';
+    alternativeTip = '缺牙修复可以考虑活动义齿、固定桥等更经济的方案。建议先到诊所拍片检查，让医生给出具体建议。';
   } else if (demand === 'whiten') {
-    alternativeTip = '建议先做基础洁牙，去除牙结石和表面色素。日常注意口腔卫生，使用美白牙膏，也能改善牙齿外观。';
+    alternativeTip = '建议先做基础洁牙，去除牙结石和表面色素。日常注意口腔卫生也能改善牙齿外观。';
   } else {
-    alternativeTip = '建议先到店做基础检查，让医生评估具体情况后，再选择最适合您的方案。';
+    alternativeTip = '建议先到店做基础检查，让医生评估具体情况后再选择最适合您的方案。';
   }
 
+  explanation.summary = `暂时没有符合预算的${demandLabel}方案，可以查看其他经济型方案或到院咨询。`;
   const otherPackages = getPackagesByBudget(budget || 'low').slice(0, 2);
 
   return {
     packages: otherPackages.length > 0 ? otherPackages : [],
     budgetMatch: 'none',
     budgetTip,
-    alternativeTip
+    alternativeTip,
+    explanation
   };
 };
