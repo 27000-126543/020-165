@@ -13,14 +13,31 @@ import {
 import { getRecommendedPackages } from '@/data/packages';
 import StepIndicator from '@/components/StepIndicator';
 import PackageCard from '@/components/PackageCard';
-import { DentalPackage, RecommendResult } from '@/types';
+import Tag from '@/components/Tag';
+import { DentalPackage, RecommendResult, BudgetRange } from '@/types';
+import { getBudgetLabel, formatPrice } from '@/utils';
 import classnames from 'classnames';
 
 const steps = ['选择诉求', '年龄段', '拍片情况', '疼痛程度', '预算范围'];
 
+const intentionOptions = [
+  { value: 'low' as BudgetRange, label: '实惠型', sub: '500元以内' },
+  { value: 'medium' as BudgetRange, label: '舒适型', sub: '500-2000元' },
+  { value: 'high' as BudgetRange, label: '品质型', sub: '2000-8000元' },
+  { value: 'premium' as BudgetRange, label: '高端型', sub: '8000元以上' }
+];
+
+const matchLabelMap = {
+  perfect: { label: '完全匹配', type: 'success' as const, icon: '✅' },
+  partial: { label: '预算略超', type: 'warning' as const, icon: '💡' },
+  none: { label: '暂无匹配', type: 'error' as const, icon: '😅' }
+};
+
 const QuestionnairePage: React.FC = () => {
   const { questionnaireData, updateQuestionnaire } = useAppContext();
   const [currentStep, setCurrentStep] = useState(0);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
 
   const canNext = useMemo(() => {
     switch (currentStep) {
@@ -41,23 +58,28 @@ const QuestionnairePage: React.FC = () => {
 
   const recommendResult = useMemo<RecommendResult>(() => {
     if (currentStep < 5) {
-      return {
-        packages: [],
-        budgetMatch: 'none'
-      };
+      return { packages: [], budgetMatch: 'none' };
     }
     return getRecommendedPackages(questionnaireData.demand, questionnaireData.budget);
   }, [currentStep, questionnaireData]);
 
+  const comparePackages = useMemo(() => {
+    return recommendResult.packages.filter(pkg => compareIds.includes(pkg.id));
+  }, [recommendResult, compareIds]);
+
   const handleNext = () => {
     if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
+    } else if (currentStep === 4 && canNext) {
+      setCurrentStep(5);
     }
   };
 
   const handleBack = () => {
     if (currentStep === 5) {
-      setCurrentStep(0);
+      setCurrentStep(4);
+      setCompareIds([]);
+      setShowCompare(false);
       return;
     }
     if (currentStep > 0) {
@@ -65,6 +87,26 @@ const QuestionnairePage: React.FC = () => {
     } else {
       Taro.navigateBack();
     }
+  };
+
+  const handleChangeBudget = (budget: BudgetRange) => {
+    updateQuestionnaire({ budget });
+    setCompareIds([]);
+    setShowCompare(false);
+    Taro.showToast({ title: '已重新推荐', icon: 'success' });
+  };
+
+  const toggleCompare = (id: string) => {
+    setCompareIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(pid => pid !== id);
+      }
+      if (prev.length >= 3) {
+        Taro.showToast({ title: '最多选3个对比', icon: 'none' });
+        return prev;
+      }
+      return [...prev, id];
+    });
   };
 
   const renderOptions = () => {
@@ -91,7 +133,6 @@ const QuestionnairePage: React.FC = () => {
             </View>
           </View>
         ));
-
       case 1:
         return ageGroupOptions.map(option => (
           <View
@@ -113,7 +154,6 @@ const QuestionnairePage: React.FC = () => {
             </View>
           </View>
         ));
-
       case 2:
         return xrayOptions.map(option => (
           <View
@@ -136,7 +176,6 @@ const QuestionnairePage: React.FC = () => {
             </View>
           </View>
         ));
-
       case 3:
         return painLevelOptions.map(option => (
           <View
@@ -159,7 +198,6 @@ const QuestionnairePage: React.FC = () => {
             </View>
           </View>
         ));
-
       case 4:
         return budgetOptions.map(option => (
           <View
@@ -181,7 +219,6 @@ const QuestionnairePage: React.FC = () => {
             </View>
           </View>
         ));
-
       default:
         return null;
     }
@@ -204,6 +241,7 @@ const QuestionnairePage: React.FC = () => {
   ];
 
   if (currentStep === 5) {
+    const matchInfo = matchLabelMap[recommendResult.budgetMatch];
     return (
       <View className={styles.page}>
         <ScrollView scrollY>
@@ -212,10 +250,16 @@ const QuestionnairePage: React.FC = () => {
           </View>
 
           <View className={styles.content}>
-            <View className={styles.resultCard}>
-              <Text className={styles.resultIcon}>
-                {recommendResult.budgetMatch === 'perfect' ? '🎉' : recommendResult.budgetMatch === 'partial' ? '💡' : '😅'}
-              </Text>
+            <View
+              className={classnames(
+                styles.resultCard,
+                styles[`result-${recommendResult.budgetMatch}`]
+              )}
+            >
+              <View className={styles.resultHeader}>
+                <Text className={styles.resultIcon}>{matchInfo.icon}</Text>
+                <Tag text={matchInfo.label} type={matchInfo.type} size="md" />
+              </View>
               <Text className={styles.resultTitle}>
                 {recommendResult.budgetMatch === 'perfect'
                   ? '已为您找到合适方案'
@@ -225,11 +269,36 @@ const QuestionnairePage: React.FC = () => {
               </Text>
               <Text className={styles.resultDesc}>
                 {recommendResult.budgetMatch === 'perfect'
-                  ? '根据您的需求，我们为您推荐以下套餐'
+                  ? '根据您的需求和预算，我们为您推荐以下套餐'
                   : recommendResult.budgetMatch === 'partial'
-                  ? '以下套餐价格接近您的预算，供您参考'
-                  : '您可以参考以下建议，或查看全部套餐'}
+                  ? '以下套餐价格接近您的预算，供您参考对比'
+                  : '您可以调整预算或查看其他建议方案'}
               </Text>
+
+              <View className={styles.currentBudget}>
+                <Text className={styles.currentBudgetLabel}>当前预算：</Text>
+                <Text className={styles.currentBudgetValue}>
+                  {questionnaireData.budget ? getBudgetLabel(questionnaireData.budget) : '未选择'}
+                </Text>
+              </View>
+
+              <View className={styles.budgetQuickChange}>
+                <Text className={styles.quickChangeLabel}>调整预算重新推荐：</Text>
+                <View className={styles.budgetChips}>
+                  {intentionOptions.map(opt => (
+                    <View
+                      key={opt.value}
+                      className={classnames(
+                        styles.budgetChip,
+                        questionnaireData.budget === opt.value && styles.budgetChipActive
+                      )}
+                      onClick={() => handleChangeBudget(opt.value)}
+                    >
+                      <Text className={styles.budgetChipText}>{opt.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
 
               {recommendResult.budgetTip && (
                 <View className={styles.budgetWarning}>
@@ -246,21 +315,155 @@ const QuestionnairePage: React.FC = () => {
                   </Text>
                 </View>
               )}
-
-              <View className={styles.resultTip}>
-                <Text className={styles.resultTipText}>
-                  � 温馨提示：套餐仅供参考，具体治疗方案请以医生面诊为准
-                </Text>
-              </View>
             </View>
+
+            {showCompare && comparePackages.length >= 2 && (
+              <View className={styles.compareSection}>
+                <View className={styles.compareHeader}>
+                  <Text className={styles.sectionTitle}>套餐对比（{comparePackages.length}个）</Text>
+                  <Text
+                    className={styles.closeCompare}
+                    onClick={() => setShowCompare(false)}
+                  >
+                    收起 ×
+                  </Text>
+                </View>
+                <ScrollView scrollX className={styles.compareScroll}>
+                  <View className={styles.compareTable}>
+                    <View className={styles.compareRowHeader}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>对比项</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCellHeader}>
+                          <Text className={styles.compareCellText}>{pkg.name}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View className={styles.compareRow}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>套餐价格</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCell}>
+                          <Text className={styles.comparePrice}>¥{formatPrice(pkg.price)}</Text>
+                          <Text className={styles.compareOriginal}>¥{formatPrice(pkg.originalPrice)}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View className={styles.compareRow}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>诊所</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCell}>
+                          <Text className={styles.compareCellText}>{pkg.clinicName}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View className={styles.compareRow}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>评分</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCell}>
+                          <Text className={styles.compareCellText}>★ {pkg.rating}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View className={styles.compareRow}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>包含项目</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCell}>
+                          {pkg.includes.slice(0, 3).map((item, idx) => (
+                            <Text key={idx} className={styles.compareItemText}>
+                              • {item.name}
+                            </Text>
+                          ))}
+                          {pkg.includes.length > 3 && (
+                            <Text className={styles.compareMore}>等{pkg.includes.length}项</Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+
+                    <View className={styles.compareRow}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>复诊次数</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCell}>
+                          <Text className={styles.compareCellText}>{pkg.followUpCount}次</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View className={styles.compareRow}>
+                      <View className={styles.compareCellLabel}>
+                        <Text className={styles.compareCellText}>另收项目</Text>
+                      </View>
+                      {comparePackages.map(pkg => (
+                        <View key={pkg.id} className={styles.compareCell}>
+                          {pkg.extraItems.length > 0 ? (
+                            pkg.extraItems.slice(0, 2).map((item, idx) => (
+                              <Text key={idx} className={styles.compareExtraText}>
+                                • {item.name} ({item.priceRange})
+                              </Text>
+                            ))
+                          ) : (
+                            <Text className={styles.compareCellText}>无</Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </ScrollView>
+              </View>
+            )}
 
             {recommendResult.packages.length > 0 ? (
               <View className={styles.packageSection}>
-                <Text className={styles.sectionTitle}>
-                  {recommendResult.budgetMatch === 'none' ? '您可能感兴趣' : '推荐套餐'}
+                <View className={styles.sectionHeader}>
+                  <Text className={styles.sectionTitle}>
+                    {recommendResult.budgetMatch === 'none' ? '您可能感兴趣' : '推荐套餐'}
+                  </Text>
+                  {compareIds.length > 0 && (
+                    <Text
+                      className={styles.compareBtn}
+                      onClick={() =>
+                        compareIds.length >= 2
+                          ? setShowCompare(true)
+                          : Taro.showToast({ title: '至少选2个对比', icon: 'none' })
+                      }
+                    >
+                      {showCompare ? '已对比' : `对比(${compareIds.length}/3)`}
+                    </Text>
+                  )}
+                </View>
+                <Text className={styles.sectionHint}>
+                  点击套餐卡片右上角可选择对比（最多3个）
                 </Text>
                 {recommendResult.packages.map(pkg => (
-                  <PackageCard key={pkg.id} pkg={pkg} />
+                  <View key={pkg.id} className={styles.packageWithCompare}>
+                    <PackageCard pkg={pkg} />
+                    <View
+                      className={classnames(
+                        styles.compareCheckbox,
+                        compareIds.includes(pkg.id) && styles.compareChecked
+                      )}
+                      onClick={() => toggleCompare(pkg.id)}
+                    >
+                      <Text className={styles.compareCheckboxText}>
+                        {compareIds.includes(pkg.id) ? '✓' : '对比'}
+                      </Text>
+                    </View>
+                  </View>
                 ))}
               </View>
             ) : (
@@ -268,7 +471,7 @@ const QuestionnairePage: React.FC = () => {
                 <Text className={styles.emptyIcon}>🦷</Text>
                 <Text className={styles.emptyText}>暂无完全匹配的套餐</Text>
                 <Text className={styles.emptyDesc}>
-                  建议您到店先做口腔检查，让医生根据具体情况给出方案
+                  建议您调整预算范围，或到店先做口腔检查，让医生根据具体情况给出方案
                 </Text>
               </View>
             )}
@@ -277,7 +480,7 @@ const QuestionnairePage: React.FC = () => {
 
         <View className={styles.bottomBar}>
           <View className={styles.backBtn} onClick={handleBack}>
-            <Text className={styles.backBtnText}>重新选择</Text>
+            <Text className={styles.backBtnText}>修改预算</Text>
           </View>
           <View
             className={styles.nextBtn}

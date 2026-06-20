@@ -164,13 +164,31 @@
   border-radius: $radius-lg;
   padding: $spacing-lg;
   box-shadow: $shadow-card;
-  text-align: center;
   margin-bottom: $spacing-lg;
+
+  &.result-perfect {
+    border: 2rpx solid rgba($color-success, 0.3);
+  }
+
+  &.result-partial {
+    border: 2rpx solid rgba($color-warning, 0.3);
+  }
+
+  &.result-none {
+    border: 2rpx solid rgba($color-error, 0.3);
+  }
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  justify-content: center;
+  margin-bottom: $spacing-sm;
 }
 
 .resultIcon {
-  font-size: 80rpx;
-  margin-bottom: $spacing-md;
+  font-size: 48rpx;
 }
 
 .resultTitle {
@@ -178,12 +196,79 @@
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
   margin-bottom: $spacing-sm;
+  text-align: center;
 }
 
 .resultDesc {
   font-size: $font-size-sm;
   color: $color-text-secondary;
   line-height: $line-height-normal;
+  text-align: center;
+  margin-bottom: $spacing-md;
+}
+
+.currentBudget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-sm;
+  padding: $spacing-sm;
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+}
+
+.currentBudgetLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.currentBudgetValue {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.budgetQuickChange {
+  margin-bottom: $spacing-sm;
+}
+
+.quickChangeLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+}
+
+.budgetChips {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.budgetChip {
+  padding: 10rpx 24rpx;
+  background-color: $color-bg-section;
+  border-radius: $radius-round;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &.budgetChipActive {
+    background-color: $color-primary-bg;
+    border-color: $color-primary;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.budgetChipText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  .budgetChipActive & {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
 }
 
 .resultTip {
@@ -198,15 +283,38 @@
   color: $color-warning;
 }
 
-.packageSection {
-  margin-top: $spacing-lg;
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.sectionHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-md;
 }
 
 .sectionTitle {
   font-size: $font-size-lg;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
-  margin-bottom: $spacing-md;
+}
+
+.compareBtn {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.closeCompare {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.packageSection {
+  margin-top: $spacing-lg;
 }
 
 .budgetWarning {
@@ -262,4 +370,140 @@
   font-size: $font-size-sm;
   color: $color-text-tertiary;
   line-height: $line-height-normal;
+}
+
+.packageWithCompare {
+  position: relative;
+}
+
+.compareCheckbox {
+  position: absolute;
+  top: $spacing-md;
+  right: $spacing-md;
+  z-index: 10;
+  padding: 8rpx 20rpx;
+  background-color: $color-bg-card;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-button;
+  transition: all $transition-fast;
+
+  &.compareChecked {
+    background-color: $color-primary;
+    border-color: $color-primary;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.compareCheckboxText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+
+  .compareChecked & {
+    color: $color-text-white;
+  }
+}
+
+.compareSection {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.compareHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.compareScroll {
+  width: 100%;
+}
+
+.compareTable {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+}
+
+.compareRowHeader,
+.compareRow {
+  display: flex;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.compareRow:last-child {
+  border-bottom: none;
+}
+
+.compareCellLabel {
+  width: 180rpx;
+  flex-shrink: 0;
+  padding: $spacing-md $spacing-sm;
+  background-color: $color-bg-section;
+  display: flex;
+  align-items: flex-start;
+}
+
+.compareCellHeader {
+  flex: 1;
+  min-width: 240rpx;
+  padding: $spacing-md $spacing-sm;
+  background-color: $color-primary-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compareCell {
+  flex: 1;
+  min-width: 240rpx;
+  padding: $spacing-md $spacing-sm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+}
+
+.compareCellText {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  text-align: center;
+  line-height: $line-height-normal;
+}
+
+.comparePrice {
+  font-size: $font-size-lg;
+  color: $color-price;
+  font-weight: $font-weight-bold;
+}
+
+.compareOriginal {
+  font-size: $font-size-xs;
+  color: $color-text-disabled;
+  text-decoration: line-through;
+}
+
+.compareItemText {
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  line-height: $line-height-tight;
+}
+
+.compareExtraText {
+  font-size: $font-size-xs;
+  color: $color-warning;
+  line-height: $line-height-tight;
+}
+
+.compareMore {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
 }

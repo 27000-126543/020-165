@@ -7,7 +7,8 @@ export default defineAppConfig({
     'pages/package-detail/index',
     'pages/questionnaire/index',
     'pages/reservation/index',
-    'pages/reservation-detail/index'
+    'pages/reservation-detail/index',
+    'pages/reservations/index'
   ],
   window: {
     backgroundTextStyle: 'light',

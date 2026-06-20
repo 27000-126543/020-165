@@ -415,3 +415,142 @@
   display: flex;
   gap: $spacing-md;
 }
+
+.intentionTag {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 6rpx 16rpx;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: $radius-xs;
+}
+
+.intentionTagIcon {
+  font-size: 20rpx;
+}
+
+.intentionTagText {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-white;
+}
+
+.commHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: 4rpx;
+  flex-wrap: wrap;
+}
+
+.commIntention {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 2rpx 12rpx;
+  background-color: rgba($color-primary, 0.1);
+  border-radius: $radius-xs;
+
+  .patient & {
+    background-color: rgba($color-success, 0.15);
+  }
+}
+
+.commIntentionIcon {
+  font-size: 18rpx;
+}
+
+.commIntentionText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+
+  .patient & {
+    color: $color-success;
+  }
+}
+
+.intentionSection {
+  margin-bottom: $spacing-md;
+}
+
+.intentionSectionTitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.intentionList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.intentionCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: $spacing-md;
+  background-color: $color-bg-section;
+  border-radius: $radius-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &.intentionCardSelected {
+    background-color: $color-primary-bg;
+    border-color: $color-primary;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.intentionCardIconWrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-round;
+  background-color: $color-bg-card;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+
+  .intentionCardSelected & {
+    background-color: $color-bg-card;
+  }
+}
+
+.intentionCardIcon {
+  font-size: 36rpx;
+}
+
+.intentionCardLabel {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.intentionCardDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.intentionCardCheck {
+  position: absolute;
+  top: $spacing-sm;
+  right: $spacing-sm;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: $radius-round;
+  background-color: $color-primary;
+  color: $color-text-white;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-weight-bold;
+}

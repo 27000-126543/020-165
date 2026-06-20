@@ -4,9 +4,15 @@ import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useAppContext } from '@/store/app-context';
 import { getPackageById } from '@/data/packages';
-import { getStatusText, getStatusColor, formatPrice, formatDateTime } from '@/utils';
-import { ReservationRecord, DentalPackage } from '@/types';
+import { getStatusText, getStatusColor, formatPrice, formatDateTime, getIntentionText, getIntentionIcon } from '@/utils';
+import { ReservationRecord, DentalPackage, HandleIntention } from '@/types';
 import classnames from 'classnames';
+
+const intentionOptions: { value: HandleIntention; label: string; icon: string; desc: string }[] = [
+  { value: 'accept_advice', label: '接受医生建议', icon: '✅', desc: '遵循医生给出的方案调整' },
+  { value: 'see_alternative', label: '想看替代套餐', icon: '🔍', desc: '希望了解其他可选方案' },
+  { value: 'defer', label: '暂不处理', icon: '⏸️', desc: '先考虑，后续再决定' }
+];
 
 const ReservationDetailPage: React.FC = () => {
   const router = useRouter();
@@ -14,6 +20,7 @@ const ReservationDetailPage: React.FC = () => {
   const [reservation, setReservation] = useState<ReservationRecord | null>(null);
   const [pkg, setPkg] = useState<DentalPackage | null>(null);
   const [patientInput, setPatientInput] = useState('');
+  const [selectedIntention, setSelectedIntention] = useState<HandleIntention | null>(null);
   const [showInapplicableModal, setShowInapplicableModal] = useState(false);
   const [inapplicableReason, setInapplicableReason] = useState('');
 
@@ -46,40 +53,28 @@ const ReservationDetailPage: React.FC = () => {
 
   const handleMarkInapplicable = () => {
     if (!inapplicableReason.trim()) {
-      Taro.showToast({
-        title: '请填写不适用原因',
-        icon: 'none'
-      });
+      Taro.showToast({ title: '请填写不适用原因', icon: 'none' });
       return;
     }
-
     if (reservation) {
       markInapplicable(reservation.id, inapplicableReason);
       setShowInapplicableModal(false);
       setInapplicableReason('');
-      Taro.showToast({
-        title: '已标记不适用',
-        icon: 'success'
-      });
+      Taro.showToast({ title: '已标记不适用', icon: 'success' });
     }
   };
 
   const handleConfirm = () => {
-    if (!patientInput.trim()) {
-      Taro.showToast({
-        title: '请填写您的意见',
-        icon: 'none'
-      });
+    if (!selectedIntention && !patientInput.trim()) {
+      Taro.showToast({ title: '请选择处理意向或填写意见', icon: 'none' });
       return;
     }
-
     if (reservation) {
-      addCommunication(reservation.id, patientInput.trim(), 'patient');
+      const content = patientInput.trim() || getIntentionText(selectedIntention || '');
+      addCommunication(reservation.id, content, 'patient', selectedIntention || undefined);
       setPatientInput('');
-      Taro.showToast({
-        title: '提交成功',
-        icon: 'success'
-      });
+      setSelectedIntention(null);
+      Taro.showToast({ title: '提交成功', icon: 'success' });
     }
   };
 
@@ -104,6 +99,12 @@ const ReservationDetailPage: React.FC = () => {
           <View className={styles.statusTag} style={{ backgroundColor: `${statusColor}40` }}>
             <Text style={{ color: statusColor }}>{getStatusText(reservation.status)}</Text>
           </View>
+          {reservation.lastIntention && (
+            <View className={styles.intentionTag}>
+              <Text className={styles.intentionTagIcon}>{getIntentionIcon(reservation.lastIntention)}</Text>
+              <Text className={styles.intentionTagText}>{getIntentionText(reservation.lastIntention)}</Text>
+            </View>
+          )}
         </View>
         <View className={styles.priceRow}>
           <Text className={styles.priceSymbol}>¥</Text>
@@ -192,9 +193,21 @@ const ReservationDetailPage: React.FC = () => {
                     <Text>{comm.type === 'doctor' ? '👨‍⚕️' : '😊'}</Text>
                   </View>
                   <View className={styles.commContent}>
-                    <Text className={styles.commType}>
-                      {comm.type === 'doctor' ? '医生' : '我'}
-                    </Text>
+                    <View className={styles.commHeader}>
+                      <Text className={styles.commType}>
+                        {comm.type === 'doctor' ? '医生' : '我'}
+                      </Text>
+                      {comm.intention && (
+                        <View className={styles.commIntention}>
+                          <Text className={styles.commIntentionIcon}>
+                            {getIntentionIcon(comm.intention)}
+                          </Text>
+                          <Text className={styles.commIntentionText}>
+                            {getIntentionText(comm.intention)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     <Text className={styles.commText}>{comm.content}</Text>
                     <Text className={styles.commTime}>{comm.time}</Text>
                   </View>
@@ -212,12 +225,38 @@ const ReservationDetailPage: React.FC = () => {
           <View className={styles.inputSection}>
             <Text className={styles.inputTitle}>我的确认</Text>
             <Text className={styles.inputTip}>
-              请填写您的意见或选择其他方案，提交后将作为沟通记录保存
+              请选择处理意向，或填写您的意见
             </Text>
+
+            <View className={styles.intentionSection}>
+              <Text className={styles.intentionSectionTitle}>处理意向：</Text>
+              <View className={styles.intentionList}>
+                {intentionOptions.map(opt => (
+                  <View
+                    key={opt.value}
+                    className={classnames(
+                      styles.intentionCard,
+                      selectedIntention === opt.value && styles.intentionCardSelected
+                    )}
+                    onClick={() => setSelectedIntention(opt.value)}
+                  >
+                    <View className={styles.intentionCardIconWrap}>
+                      <Text className={styles.intentionCardIcon}>{opt.icon}</Text>
+                    </View>
+                    <Text className={styles.intentionCardLabel}>{opt.label}</Text>
+                    <Text className={styles.intentionCardDesc}>{opt.desc}</Text>
+                    {selectedIntention === opt.value && (
+                      <View className={styles.intentionCardCheck}>✓</View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+
             <View className={styles.inputBox}>
               <Textarea
                 className={styles.textarea}
-                placeholder="请输入您的意见，如：接受建议，希望了解其他方案；或：我坚持使用此套餐等"
+                placeholder="补充说明（可选），如：希望了解具体哪些替代方案、或者对医生建议的疑问等"
                 value={patientInput}
                 onInput={e => setPatientInput(e.detail.value)}
                 maxlength={500}
@@ -249,8 +288,11 @@ const ReservationDetailPage: React.FC = () => {
               <Text className={styles.secondaryBtnText}>返回</Text>
             </View>
             <View
-              className={classnames(styles.primaryBtn, !patientInput.trim() && styles.disabled)}
-              onClick={patientInput.trim() ? handleConfirm : undefined}
+              className={classnames(
+                styles.primaryBtn,
+                !selectedIntention && !patientInput.trim() && styles.disabled
+              )}
+              onClick={selectedIntention || patientInput.trim() ? handleConfirm : undefined}
             >
               <Text className={styles.primaryBtnText}>确认提交</Text>
             </View>

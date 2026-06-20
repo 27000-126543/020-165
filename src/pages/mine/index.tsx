@@ -29,10 +29,18 @@ const MinePage: React.FC = () => {
   ];
 
   const handleMenuClick = (action: string) => {
+    if (action === 'reservations' || action === 'locks') {
+      Taro.navigateTo({ url: '/pages/reservations/index' });
+      return;
+    }
     Taro.showToast({
       title: '功能开发中',
       icon: 'none'
     });
+  };
+
+  const goAllReservations = () => {
+    Taro.navigateTo({ url: '/pages/reservations/index' });
   };
 
   const activeReservations = reservations.slice(0, 2);
@@ -66,38 +74,55 @@ const MinePage: React.FC = () => {
         </View>
 
         <View className={styles.section}>
-          <View className={styles.sectionTitle}>最近预约</View>
-          <View className={styles.reservationList}>
-            {activeReservations.map(r => (
-              <View
-                key={r.id}
-                className={styles.reservationItem}
-                onClick={() =>
-                  Taro.navigateTo({
-                    url: `/pages/reservation-detail/index?id=${r.id}`
-                  })
-                }
-              >
-                <View className={styles.reservationHeader}>
-                  <Text className={styles.reservationName}>{r.packageName}</Text>
-                  <Text
-                    className={styles.reservationStatus}
-                    style={{ color: getStatusColor(r.status) }}
-                  >
-                    {getStatusText(r.status)}
-                  </Text>
-                </View>
-                <Text className={styles.reservationInfo}>{r.clinicName}</Text>
-                <View className={styles.reservationFooter}>
-                  <Text className={styles.reservationPrice}>¥{formatPrice(r.price)}</Text>
-                  {r.status === 'inapplicable' && (
-                    <Tag text="待确认" type="warning" size="sm" />
-                  )}
-                  <Text className={styles.reservationArrow}>查看详情 ›</Text>
-                </View>
+          <View className={styles.sectionHeader}>
+            <View className={styles.sectionTitle}>最近预约</View>
+            {reservations.length > 0 && (
+              <View className={styles.sectionMore} onClick={goAllReservations}>
+                <Text className={styles.sectionMoreText}>查看全部</Text>
+                <Text className={styles.sectionMoreArrow}>›</Text>
               </View>
-            ))}
+            )}
           </View>
+          {activeReservations.length > 0 ? (
+            <View className={styles.reservationList}>
+              {activeReservations.map(r => (
+                <View
+                  key={r.id}
+                  className={styles.reservationItem}
+                  onClick={() =>
+                    Taro.navigateTo({
+                      url: `/pages/reservation-detail/index?id=${r.id}`
+                    })
+                  }
+                >
+                  <View className={styles.reservationHeader}>
+                    <Text className={styles.reservationName}>{r.packageName}</Text>
+                    <Text
+                      className={styles.reservationStatus}
+                      style={{ color: getStatusColor(r.status) }}
+                    >
+                      {getStatusText(r.status)}
+                    </Text>
+                  </View>
+                  <Text className={styles.reservationInfo}>{r.clinicName}</Text>
+                  <View className={styles.reservationFooter}>
+                    <Text className={styles.reservationPrice}>¥{formatPrice(r.price)}</Text>
+                    {r.status === 'inapplicable' && (
+                      <Tag text="待确认" type="warning" size="sm" />
+                    )}
+                    <Text className={styles.reservationArrow}>查看详情 ›</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View className={styles.emptyReservation}>
+              <Text className={styles.emptyReservationText}>暂无预约记录</Text>
+              <View className={styles.emptyReservationBtn} onClick={goAllReservations}>
+                <Text className={styles.emptyReservationBtnText}>去选择套餐</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {menuGroups.map((group, idx) => (

@@ -81,3 +81,31 @@ export const formatDateTime = (date: Date): string => {
 export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 };
+
+export const getIntentionText = (intention: string): string => {
+  const map: Record<string, string> = {
+    accept_advice: '接受医生建议',
+    see_alternative: '想看替代套餐',
+    defer: '暂不处理'
+  };
+  return map[intention] || intention;
+};
+
+export const getIntentionIcon = (intention: string): string => {
+  const map: Record<string, string> = {
+    accept_advice: '✅',
+    see_alternative: '🔍',
+    defer: '⏸️'
+  };
+  return map[intention] || '📝';
+};
+
+export const getBudgetLabel = (budget: string): string => {
+  const map: Record<string, string> = {
+    low: '实惠型(500元以内)',
+    medium: '舒适型(500-2000元)',
+    high: '品质型(2000-8000元)',
+    premium: '高端型(8000元以上)'
+  };
+  return map[budget] || budget;
+};

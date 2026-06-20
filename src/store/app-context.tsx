@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Taro from '@tarojs/taro';
-import { QuestionnaireData, ReservationRecord, DemandType, CommunicationItem } from '@/types';
+import { QuestionnaireData, ReservationRecord, DemandType, CommunicationItem, HandleIntention } from '@/types';
 import { generateId, formatDateTime } from '@/utils';
 
 interface AppContextType {
@@ -11,7 +11,7 @@ interface AppContextType {
   addReservation: (reservation: ReservationRecord) => void;
   updateReservation: (id: string, data: Partial<ReservationRecord>) => void;
   markInapplicable: (id: string, reason: string) => void;
-  addCommunication: (id: string, content: string, type: 'doctor' | 'patient') => void;
+  addCommunication: (id: string, content: string, type: 'doctor' | 'patient', intention?: HandleIntention) => void;
   getReservationById: (id: string) => ReservationRecord | undefined;
   isLoaded: boolean;
 }
@@ -153,12 +153,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     console.log('[AppContext] 标记不适用:', id);
   };
 
-  const addCommunication = (id: string, content: string, type: 'doctor' | 'patient') => {
+  const addCommunication = (id: string, content: string, type: 'doctor' | 'patient', intention?: HandleIntention) => {
     const commItem: CommunicationItem = {
       id: generateId(),
       time: formatDateTime(new Date()),
       type,
-      content
+      content,
+      intention
     };
     setReservations(prev =>
       prev.map(r =>
@@ -166,12 +167,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           ? {
               ...r,
               status: type === 'patient' ? 'reconfirmed' : r.status,
+              lastIntention: intention || r.lastIntention,
               communications: [...r.communications, commItem]
             }
           : r
       )
     );
-    console.log('[AppContext] 新增沟通记录:', id, type);
+    console.log('[AppContext] 新增沟通记录:', id, type, intention || '');
   };
 
   return (

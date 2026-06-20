@@ -64,12 +64,16 @@ export interface DentalPackage {
 // 预约记录状态
 export type ReservationStatus = 'locked' | 'confirmed' | 'completed' | 'cancelled' | 'inapplicable' | 'reconfirmed';
 
+// 不适用处理意向
+export type HandleIntention = 'accept_advice' | 'see_alternative' | 'defer';
+
 // 沟通记录项
 export interface CommunicationItem {
   id: string;
   time: string;
   type: 'doctor' | 'patient';
   content: string;
+  intention?: HandleIntention;
 }
 
 // 预约记录
@@ -84,6 +88,7 @@ export interface ReservationRecord {
   status: ReservationStatus;
   createTime: string;
   inapplicableReason?: string;
+  lastIntention?: HandleIntention;
   communications: CommunicationItem[];
 }
 
